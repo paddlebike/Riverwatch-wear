@@ -33,13 +33,27 @@
             <meta-data
                 android:name="com.google.android.wearable.watchface.preview_circular"
                 android:resource="@drawable/preview_digital_circular" />
-
+            <meta-data
+                android:name="com.google.android.wearable.watchface.wearableConfigurationAction"
+                android:value="com.paddlebike.kenandrews.riverwatch.CONFIG_COMPLICATION_SIMPLE"/>
             <intent-filter>
                 <action android:name="android.service.wallpaper.WallpaperService" />
 
                 <category android:name="com.google.android.wearable.watchface.category.WATCH_FACE" />
             </intent-filter>
         </service>
+
+        <activity android:name="android.support.wearable.complications.ComplicationHelperActivity"/>
+        <activity
+            android:name=".ComplicationConfigActivity"
+            android:label="@string/complication_config">
+            <intent-filter>
+                <action android:name="com.paddlebike.kenandrews.riverwatch.CONFIG_COMPLICATION_SIMPLE"/>
+
+                <category android:name="com.google.android.wearable.watchface.category.WEARABLE_CONFIGURATION"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
 
         <service
             android:name="com.paddlebike.kenandrews.riverwatch.USGSStreamLevelComplication"

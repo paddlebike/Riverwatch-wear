@@ -5,6 +5,7 @@
     <string name="getting_update">Getting Update</string>
 
     <string name="complications_provider_usgs_level">River Level</string>
+    <string name="complications_provider_usgs_temp">River Temp</string>
     <string name="gauge_id">01646500</string>
     <string name="usgs_gauge_url">https://waterservices.usgs.gov/nwis/iv/?%26period=P1D&amp;format=json&amp;parameterCd=00065,00060,00010&amp;sites=$gaugeId"</string>
     <string name="watchface_prefs">com.paddlebike.riverwatch.kenandrews.COMPLICATION_PREFERENCE_FILE_KEY</string>

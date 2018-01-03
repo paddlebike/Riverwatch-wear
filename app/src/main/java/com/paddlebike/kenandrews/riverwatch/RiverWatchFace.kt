@@ -21,15 +21,15 @@ import android.util.Log
 import android.util.SparseArray
 import android.view.SurfaceHolder
 import android.view.WindowInsets
+import com.paddlebike.kenandrews.riverwatch.config.ComplicationConfigRecyclerViewAdapter
 
 import java.lang.ref.WeakReference
 import java.util.Calendar
 import java.util.TimeZone
 
-import com.paddlebike.kenandrews.riverwatch.ComplicationConfigRecyclerViewAdapter.ComplicationLocation.LEFT
-import com.paddlebike.kenandrews.riverwatch.ComplicationConfigRecyclerViewAdapter.ComplicationLocation.RIGHT
-import com.paddlebike.kenandrews.riverwatch.ComplicationConfigRecyclerViewAdapter.ComplicationLocation.BOTTOM
-import kotlinx.coroutines.experimental.launch
+import com.paddlebike.kenandrews.riverwatch.config.ComplicationConfigRecyclerViewAdapter.ComplicationLocation.LEFT
+import com.paddlebike.kenandrews.riverwatch.config.ComplicationConfigRecyclerViewAdapter.ComplicationLocation.RIGHT
+import com.paddlebike.kenandrews.riverwatch.config.ComplicationConfigRecyclerViewAdapter.ComplicationLocation.BOTTOM
 
 private const val TAG = "RiverWatchFace"
 /**
@@ -153,10 +153,6 @@ class RiverWatchFace : CanvasWatchFaceService() {
         private var mLowBitAmbient: Boolean = false
         private var mBurnInProtection: Boolean = false
         private var mAmbient: Boolean = false
-        private var mFetchedWater: Boolean = false
-
-        private var mRiverLevel: Float = 0.0f
-        private var mRiverTemp: Float = 0.0f
 
         /* Maps active complication ids to the data for that complication. Note: Data will only be
          * present if the user has chosen a provider via the settings activity for the watch face.
@@ -214,7 +210,6 @@ class RiverWatchFace : CanvasWatchFaceService() {
                 isAntiAlias = true
                 color = ContextCompat.getColor(applicationContext, R.color.digital_text)
             }
-            launch { getGaugeInfo() }
         }
 
         // Pulls all user's preferences for watch face appearance.
@@ -241,9 +236,9 @@ class RiverWatchFace : CanvasWatchFaceService() {
             setDefaultSystemComplicationProvider(LEFT_COMPLICATION_ID, UNREAD_NOTIFICATION_COUNT, TYPE_SHORT_TEXT)
 
             // "com.paddlebike.kenandrews.riverwatch.USGSStreamLevelComplication"
-            //val myProvider = ComponentName(applicationContext, "USGSStreamLevelComplication")
+            val myProvider = ComponentName(applicationContext, "USGSStreamLevelComplication")
             //val myProvider = ComponentName("RiverWatch", "River Level")
-            //setDefaultComplicationProvider(LEFT_COMPLICATION_ID, myProvider, TYPE_SHORT_TEXT)
+            setDefaultComplicationProvider(LEFT_COMPLICATION_ID, myProvider, TYPE_SHORT_TEXT)
 
 
             // Adds new complications to a SparseArray to simplify setting styles and ambient
@@ -340,7 +335,6 @@ class RiverWatchFace : CanvasWatchFaceService() {
             when (tapType) {
                 WatchFaceService.TAP_TYPE_TOUCH -> {
                     // The user has started touching the screen.
-                    launch { getGaugeInfo() }
                 }
                 WatchFaceService.TAP_TYPE_TOUCH_CANCEL -> {
                     // The user has started a different gesture or otherwise cancelled the tap.
@@ -424,31 +418,10 @@ class RiverWatchFace : CanvasWatchFaceService() {
 
             val timeString = String.format("%d:%02d", mCalendar.get(Calendar.HOUR), mCalendar.get(Calendar.MINUTE))
 
-           /* if (!mAmbient && (mCalendar.get(Calendar.MINUTE) == 15) || !mFetchedWater) {
-                launch { getGaugeInfo() }
-            }*/
-
            canvas.drawText(timeString, mXOffset, mYOffset, mTextPaint)
 
-            /*if (mRiverLevel != 0F) {
-                var y = mYOffset + -mTextPaint.ascent() + mTextPaint.descent()
-                canvas.drawText(String.format("%2.02f FT", mRiverLevel) ,mXOffset, y, mTextPaint)
-                if (mRiverTemp != 0F) {
-                    y += -mTextPaint.ascent() + mTextPaint.descent()
-                    canvas.drawText(String.format("%2.02f C",  mRiverTemp) ,mXOffset, y, mTextPaint)
-                }
-            }*/
-
         }
 
-        private fun getGaugeInfo()  {
-            mFetchedWater = true
-            try {
-                val gauge = USGSGuage.fetch("01646500")
-                mRiverLevel = gauge.getValueForKey(GaugeConstants.GAUGE_LEVEL)
-                mRiverTemp  = gauge.getValueForKey(GaugeConstants.GAUGE_TEMP)
-            } catch (e: Exception) {}
-        }
 
         override fun onVisibilityChanged(visible: Boolean) {
             super.onVisibilityChanged(visible)

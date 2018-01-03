@@ -45,7 +45,7 @@
 
         <activity android:name="android.support.wearable.complications.ComplicationHelperActivity"/>
         <activity
-            android:name=".ComplicationConfigActivity"
+            android:name=".config.ComplicationConfigActivity"
             android:label="@string/complication_config">
             <intent-filter>
                 <action android:name="com.paddlebike.kenandrews.riverwatch.CONFIG_COMPLICATION_SIMPLE"/>
@@ -56,7 +56,7 @@
         </activity>
 
         <service
-            android:name="com.paddlebike.kenandrews.riverwatch.USGSStreamLevelComplication"
+            android:name="com.paddlebike.kenandrews.riverwatch.complicationProvider.USGSStreamLevelComplication"
             android:label="@string/complications_provider_usgs_level"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
             <intent-filter>
@@ -71,6 +71,7 @@
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
                 android:value="900"/>
         </service>
+
 
         <meta-data
             android:name="com.google.android.gms.version"

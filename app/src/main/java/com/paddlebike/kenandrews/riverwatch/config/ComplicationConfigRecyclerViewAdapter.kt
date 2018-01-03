@@ -1,4 +1,4 @@
-package com.paddlebike.kenandrews.riverwatch
+package com.paddlebike.kenandrews.riverwatch.config
 
 /**
  *
@@ -7,7 +7,6 @@ package com.paddlebike.kenandrews.riverwatch
 import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.drawable.Drawable
 import android.support.v7.widget.RecyclerView
@@ -20,10 +19,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.View.OnClickListener
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.Switch
+import com.paddlebike.kenandrews.riverwatch.R
+import com.paddlebike.kenandrews.riverwatch.RiverWatchFace
 
 import java.util.ArrayList
 import java.util.concurrent.Executors
@@ -362,7 +362,7 @@ class ComplicationConfigRecyclerViewAdapter(
                                 complicationProviderInfo: ComplicationProviderInfo?) {
 
                             if (complicationProviderInfo != null) {
-                                Log.d(TAG, "onProviderInfoReceived: " + complicationProviderInfo!!.toString())
+                                Log.d(TAG, "onProviderInfoReceived: " + complicationProviderInfo.toString())
 
                                 updateComplicationViews(watchFaceComplicationId, complicationProviderInfo)
                             }

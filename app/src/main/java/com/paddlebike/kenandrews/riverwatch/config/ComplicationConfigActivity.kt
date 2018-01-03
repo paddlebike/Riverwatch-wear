@@ -1,4 +1,4 @@
-package com.paddlebike.kenandrews.riverwatch
+package com.paddlebike.kenandrews.riverwatch.config
 
 import android.app.Activity
 import android.content.Intent
@@ -8,6 +8,7 @@ import android.support.wear.widget.WearableRecyclerView
 import android.support.wearable.complications.ComplicationProviderInfo
 import android.support.wearable.complications.ProviderChooserIntent
 import android.util.Log
+import com.paddlebike.kenandrews.riverwatch.R
 
 /**
  * The watch-side config activity for {@link RiverWatch}, which

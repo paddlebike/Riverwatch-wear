@@ -12,6 +12,8 @@ class GaugeConstants {
         val GAUGE_TEMP  = "00010"
         val GAUGE_LEVEL = "00065"
         val GAUGE_FLOW  = "00060"
+
+        val ERROR_VALUE = -999999.00F
     }
 }
 

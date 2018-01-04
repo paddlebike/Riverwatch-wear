@@ -93,6 +93,12 @@ class USGSStreamTempComplication : ComplicationProviderService() {
             ComplicationData.TYPE_LONG_TEXT -> return ComplicationData.Builder(ComplicationData.TYPE_LONG_TEXT)
                     .setLongText(ComplicationText.plainText(String.format("Temp: %2.1fC", gaugeValue)))
                     .build()
+            ComplicationData.TYPE_RANGED_VALUE -> return ComplicationData.Builder(ComplicationData.TYPE_RANGED_VALUE)
+                    .setMinValue(0F)
+                    .setValue(gaugeValue)
+                    .setMaxValue(50F)
+                    .setShortText(ComplicationText.plainText(String.format("%2.1f C", gaugeValue)))
+                    .build()
             else -> if (Log.isLoggable(TAG, Log.WARN)) {
                 Log.w(TAG, "Unexpected complication type " + dataType)
             }

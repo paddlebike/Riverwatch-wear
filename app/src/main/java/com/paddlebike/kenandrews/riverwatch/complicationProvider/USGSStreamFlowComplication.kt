@@ -11,11 +11,11 @@ import com.paddlebike.kenandrews.riverwatch.USGSGuage
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 
-private const val TAG = "USGSGaugeLevel"
+private const val TAG = "USGSGaugeFlow"
 /**
  * Complication for getting streamflow data
  */
-class USGSStreamLevelComplication : ComplicationProviderService() {
+class USGSStreamFlowComplication : ComplicationProviderService() {
 
     /*
      * Called when a complication has been activated. The method is for any one-time
@@ -49,7 +49,7 @@ class USGSStreamLevelComplication : ComplicationProviderService() {
         val localGauge = gaugeModel.getGaugeModel(gaugeId)
 
         doAsync {
-            val gaugeValue = localGauge.getValueForKey(GaugeConstants.GAUGE_LEVEL)
+            val gaugeValue = localGauge.getValueForKey(GaugeConstants.GAUGE_FLOW)
             val complicationData = createComplicationData(gaugeValue!!, dataType)
             uiThread {
                 updateComplication(complicationData, complicationId, complicationManager)
@@ -69,8 +69,8 @@ class USGSStreamLevelComplication : ComplicationProviderService() {
      * Send the complication data back to the ComplicationManager
      */
     private fun updateComplication(complicationData: ComplicationData?,
-                           complicationId: Int,
-                           complicationManager: ComplicationManager) {
+                                   complicationId: Int,
+                                   complicationManager: ComplicationManager) {
 
         if (complicationData != null) {
             complicationManager.updateComplicationData(complicationId, complicationData)
@@ -89,13 +89,13 @@ class USGSStreamLevelComplication : ComplicationProviderService() {
         when (dataType) {
 
             ComplicationData.TYPE_SHORT_TEXT -> {
-                val text = if (gaugeValue == GaugeConstants.ERROR_VALUE) "frozen" else String.format("%2.02fft", gaugeValue)
+                val text = if (gaugeValue == GaugeConstants.ERROR_VALUE) "frozen" else String.format("%d cfs", gaugeValue.toInt())
                 return ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
                         .setShortText(ComplicationText.plainText(text))
                         .build()
             }
             ComplicationData.TYPE_LONG_TEXT -> {
-                val text = if (gaugeValue == GaugeConstants.ERROR_VALUE) "frozen" else String.format("Level: %2.02fft", gaugeValue)
+                val text = if (gaugeValue == GaugeConstants.ERROR_VALUE) "frozen" else String.format("Flow: %d cfs", gaugeValue.toInt())
                 return ComplicationData.Builder(ComplicationData.TYPE_LONG_TEXT)
                         .setLongText(ComplicationText.plainText(text))
                         .build()

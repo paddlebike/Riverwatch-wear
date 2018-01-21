@@ -46,6 +46,9 @@ class ComplicationConfigData {
             val moreOptionsConfigItem = MoreOptionsConfigItem(R.drawable.ic_expand_more_white_18dp)
             settingsConfigData.add(moreOptionsConfigItem)
 
+            val gaugeIdConfigItem = GaugeIdConfigItem(R.string.site_id)
+            settingsConfigData.add(gaugeIdConfigItem)
+
             // Data for 'Unread Notifications' UX (toggle) in settings Activity.
             val unreadNotificationsConfigItem = UnreadNotificationConfigItem(
                     context.getString(R.string.config_unread_notifications_label),
@@ -68,15 +71,10 @@ class ComplicationConfigData {
         override val configType: Int
             get() = ComplicationConfigRecyclerViewAdapter.TYPE_PREVIEW_AND_COMPLICATIONS_CONFIG
 
-   /*     companion object {
-            fun getConfigType(): Int {
-                return this.getConfigType()
-            }
-
-            fun getDefaultComplicationResourceId(): Int {
-                return this.getDefaultComplicationResourceId()
-            }
-        }*/
+        companion object {
+            val configType: Int
+                get() = ComplicationConfigRecyclerViewAdapter.TYPE_PREVIEW_AND_COMPLICATIONS_CONFIG
+        }
     }
 
     /**
@@ -111,5 +109,14 @@ class ComplicationConfigData {
         }
     }
 
+    class GaugeIdConfigItem internal constructor(val defaultGaugeId: Int) : ConfigItemType {
+        override val configType: Int
+            get() = ComplicationConfigRecyclerViewAdapter.TYPE_GAUGE_ID_CONFIG
+
+        companion object {
+            val configType: Int
+                get() = ComplicationConfigRecyclerViewAdapter.TYPE_GAUGE_ID_CONFIG
+        }
+    }
 
 }

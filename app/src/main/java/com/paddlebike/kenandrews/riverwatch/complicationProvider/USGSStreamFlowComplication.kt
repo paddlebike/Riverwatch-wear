@@ -7,7 +7,6 @@ import android.support.wearable.complications.ComplicationText
 import android.util.Log
 import com.paddlebike.kenandrews.riverwatch.GaugeConstants
 import com.paddlebike.kenandrews.riverwatch.R
-import com.paddlebike.kenandrews.riverwatch.USGSGuage
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 
@@ -44,7 +43,7 @@ class USGSStreamFlowComplication : ComplicationProviderService() {
             complicationId: Int, dataType: Int, complicationManager: ComplicationManager) {
         Log.d(TAG, "onComplicationUpdate() id: " + complicationId)
 
-        val gaugeModel = ComplicationGaugeModel
+        val gaugeModel = ComplicationSiteModel
         val gaugeId = getGaugeId()
         val localGauge = gaugeModel.getGaugeModel(gaugeId)
 
@@ -110,13 +109,13 @@ class USGSStreamFlowComplication : ComplicationProviderService() {
 
     private fun getGaugeId() :String {
         try {
-            val defaultGaugeId = this.applicationContext.getString(R.string.gauge_id)
-            val key = "com.paddlebike.kenandrews.riverwatch.COMPLICATION_PROVIDER_PREFERENCES_FILE_KEY"
+            val defaultSiteId = this.applicationContext.getString(R.string.site_id)
+            val key = this.applicationContext.getString(R.string.watchface_prefs)
             val prefs = this.applicationContext.getSharedPreferences(key, 0)
-            return prefs.getString("saved_gauge_id", defaultGaugeId)
+            return prefs.getString("saved_gauge_id", defaultSiteId)
         } catch (e: Exception) {
             Log.e(TAG, "Exception getting stuff")
         }
-        return getString(R.string.gauge_id)
+        return getString(R.string.site_id)
     }
 }

@@ -15,15 +15,16 @@ import android.support.wearable.complications.ComplicationProviderInfo
 import android.support.wearable.complications.ProviderInfoRetriever
 import android.support.wearable.complications.ProviderInfoRetriever.OnProviderInfoReceivedCallback
 import android.util.Log
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.OnClickListener
 import android.view.ViewGroup
-import android.widget.ImageButton
-import android.widget.ImageView
-import android.widget.Switch
+import android.view.inputmethod.EditorInfo
+import android.widget.*
 import com.paddlebike.kenandrews.riverwatch.R
 import com.paddlebike.kenandrews.riverwatch.RiverWatchFace
+
 
 import java.util.ArrayList
 import java.util.concurrent.Executors
@@ -59,7 +60,6 @@ class ComplicationConfigRecyclerViewAdapter(
         watchFaceServiceClass: Class<*>,
         private val mSettingsDataSet: ArrayList<ComplicationConfigData.Companion.ConfigItemType>) :
         RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-
     /**
     ComponentName associated with watch face service (service that renders watch face). Used
      to retrieve complication information.
@@ -72,9 +72,10 @@ class ComplicationConfigRecyclerViewAdapter(
     // Selected complication id by user.
     private var mSelectedComplicationId: Int = 0
 
-    private val mBottomComplicationId: Int
     private val mLeftComplicationId: Int
+    private val mCenterComplicationId: Int
     private val mRightComplicationId: Int
+    private val mBottomComplicationId: Int
 
     // Required to retrieve complication data from watch face for preview.
     private val mProviderInfoRetriever: ProviderInfoRetriever
@@ -91,6 +92,7 @@ class ComplicationConfigRecyclerViewAdapter(
     enum class ComplicationLocation {
         BACKGROUND,
         LEFT,
+        CENTER,
         RIGHT,
         TOP,
         BOTTOM
@@ -101,13 +103,12 @@ class ComplicationConfigRecyclerViewAdapter(
         // Default value is invalid (only changed when user taps to change complication).
         mSelectedComplicationId = -1
 
-        mBottomComplicationId = RiverWatchFace.getComplicationId(ComplicationLocation.BOTTOM)
         mLeftComplicationId = RiverWatchFace.getComplicationId(ComplicationLocation.LEFT)
+        mCenterComplicationId = RiverWatchFace.getComplicationId(ComplicationLocation.CENTER)
         mRightComplicationId = RiverWatchFace.getComplicationId(ComplicationLocation.RIGHT)
+        mBottomComplicationId = RiverWatchFace.getComplicationId(ComplicationLocation.BOTTOM)
 
-        mSharedPref = mContext.getSharedPreferences(
-                mContext.getString(R.string.watchface_prefs),
-                Context.MODE_PRIVATE)
+        mSharedPref = mContext.getSharedPreferences(mContext.getString(R.string.watchface_prefs), 0)
 
         // Initialization of code to retrieve active complication data for the watch face.
         mProviderInfoRetriever = ProviderInfoRetriever(mContext, Executors.newCachedThreadPool())
@@ -139,6 +140,12 @@ class ComplicationConfigRecyclerViewAdapter(
                                     parent,
                                     false))
 
+            TYPE_GAUGE_ID_CONFIG -> viewHolder = GaugeIdViewHolder(
+                    LayoutInflater.from(parent.context)
+                            .inflate(
+                                    R.layout.config_list_gauge_id,
+                                    parent,
+                                    false))
 
             TYPE_UNREAD_NOTIFICATION_CONFIG -> viewHolder = UnreadNotificationViewHolder(
                     LayoutInflater.from(parent.context)
@@ -165,8 +172,7 @@ class ComplicationConfigRecyclerViewAdapter(
                 val previewAndComplicationsConfigItem = configItemType as ComplicationConfigData.PreviewAndComplicationsConfigItem
 
                 val defaultComplicationResourceId = previewAndComplicationsConfigItem.defaultComplicationResourceId
-                previewAndComplicationsViewHolder.setDefaultComplicationDrawable(
-                        defaultComplicationResourceId)
+                previewAndComplicationsViewHolder.setDefaultComplicationDrawable(defaultComplicationResourceId)
 
                 previewAndComplicationsViewHolder.initializeComplications()
             }
@@ -176,6 +182,14 @@ class ComplicationConfigRecyclerViewAdapter(
                 val moreOptionsConfigItem = configItemType as ComplicationConfigData.MoreOptionsConfigItem
 
                 moreOptionsViewHolder.setIcon(moreOptionsConfigItem.iconResourceId)
+            }
+
+
+            TYPE_GAUGE_ID_CONFIG -> {
+                val gaugeIdViewHolder = viewHolder as GaugeIdViewHolder
+                val gaugeIdConfigItem = configItemType as ComplicationConfigData.GaugeIdConfigItem
+
+                gaugeIdViewHolder.setDefault(gaugeIdConfigItem.defaultGaugeId)
             }
 
 
@@ -237,6 +251,9 @@ class ComplicationConfigRecyclerViewAdapter(
         private val mLeftComplicationBackground: ImageView =
                 view.findViewById(R.id.left_complication_background) as ImageView
 
+        private val mCenterComplicationBackground: ImageView =
+                view.findViewById(R.id.center_complication_background) as ImageView
+
         private val mRightComplicationBackground: ImageView =
                 view.findViewById(R.id.right_complication_background) as ImageView
 
@@ -246,11 +263,15 @@ class ComplicationConfigRecyclerViewAdapter(
         private val mLeftComplication: ImageButton =
                 view.findViewById(R.id.left_complication) as ImageButton
 
+        private val mCenterComplication: ImageButton =
+                view.findViewById(R.id.center_complication) as ImageButton
+
         private val mRightComplication: ImageButton =
                 view.findViewById(R.id.right_complication) as ImageButton
 
         private val mBottomComplication: ImageButton =
                 view.findViewById(R.id.bottom_complication) as ImageButton
+
 
         private var mDefaultComplicationDrawable: Drawable? = null
 
@@ -259,6 +280,7 @@ class ComplicationConfigRecyclerViewAdapter(
         init {
             // Sets up left complication preview.
             mLeftComplication.setOnClickListener(this)
+            mCenterComplication.setOnClickListener(this)
             mRightComplication.setOnClickListener(this)
             mBottomComplication.setOnClickListener(this)
         }
@@ -266,15 +288,23 @@ class ComplicationConfigRecyclerViewAdapter(
         override fun onClick(view: View) {
             if (view == mLeftComplication) {
                 Log.d(TAG, "Left Complication click()")
-
                 val currentActivity = view.context as Activity
                 launchComplicationHelperActivity(currentActivity, ComplicationLocation.LEFT)
 
+            } else if (view == mCenterComplication) {
+                Log.d(TAG, "Center Complication click()")
+                val currentActivity = view.context as Activity
+                launchComplicationHelperActivity(currentActivity, ComplicationLocation.CENTER)
+
             } else if (view == mRightComplication) {
                 Log.d(TAG, "Right Complication click()")
-
                 val currentActivity = view.context as Activity
                 launchComplicationHelperActivity(currentActivity, ComplicationLocation.RIGHT)
+
+            } else if (view == mBottomComplication) {
+                Log.d(TAG, "Bottom Complication click()")
+                val currentActivity = view.context as Activity
+                launchComplicationHelperActivity(currentActivity, ComplicationLocation.BOTTOM)
             }
         }
 
@@ -311,14 +341,17 @@ class ComplicationConfigRecyclerViewAdapter(
 
         fun setDefaultComplicationDrawable(resourceId: Int) {
 
-            mBottomComplication.setImageDrawable(mDefaultComplicationDrawable)
-            mBottomComplicationBackground.visibility = View.INVISIBLE
-
             mLeftComplication.setImageDrawable(mDefaultComplicationDrawable)
             mLeftComplicationBackground.visibility = View.INVISIBLE
 
+            mCenterComplication.setImageDrawable(mDefaultComplicationDrawable)
+            mCenterComplicationBackground.visibility = View.INVISIBLE
+
             mRightComplication.setImageDrawable(mDefaultComplicationDrawable)
             mRightComplicationBackground.visibility = View.INVISIBLE
+
+            mBottomComplication.setImageDrawable(mDefaultComplicationDrawable)
+            mBottomComplicationBackground.visibility = View.INVISIBLE
         }
 
         fun updateComplicationViews(
@@ -327,12 +360,17 @@ class ComplicationConfigRecyclerViewAdapter(
             Log.d(TAG, "\tinfo: " + complicationProviderInfo!!)
 
             when (watchFaceComplicationId) {
-                mBottomComplicationId -> updateComplicationView(complicationProviderInfo, mBottomComplication,
-                        mBottomComplicationBackground)
                 mLeftComplicationId -> updateComplicationView(complicationProviderInfo, mLeftComplication,
                         mLeftComplicationBackground)
+
+                mCenterComplicationId -> updateComplicationView(complicationProviderInfo, mCenterComplication,
+                        mCenterComplicationBackground)
+
                 mRightComplicationId -> updateComplicationView(complicationProviderInfo, mRightComplication,
                         mRightComplicationBackground)
+
+                mBottomComplicationId -> updateComplicationView(complicationProviderInfo, mBottomComplication,
+                        mBottomComplicationBackground)
             }
         }
 
@@ -386,6 +424,38 @@ class ComplicationConfigRecyclerViewAdapter(
             val context = mMoreOptionsImageView.context
             mMoreOptionsImageView.setImageDrawable(context.getDrawable(resourceId))
         }
+    }
+
+
+    /** Numeric text box for entering the gauge ID.  */
+    inner class GaugeIdViewHolder(view: View) : RecyclerView.ViewHolder(view), TextView.OnEditorActionListener  {
+
+        private var mGaugeIdTextView: TextView?? = view.findViewById(R.id.stationIdEditBox) as TextView
+
+        init {
+            mGaugeIdTextView!!.setOnEditorActionListener(this)
+        }
+
+        fun setDefault(resourceId: Int) {
+            Log.d(TAG, "Setting the default gauge ID")
+            val context = mGaugeIdTextView!!.context
+            val defaultSite = context.getString(resourceId)
+            mGaugeIdTextView!!.text = mSharedPref.getString("saved_gauge_id", defaultSite)
+
+        }
+
+        override fun onEditorAction(textView: TextView?, actionId: Int, p2: KeyEvent?): Boolean {
+            if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                val newSite = mGaugeIdTextView!!.text.toString()
+                Log.v("New site ID", newSite)
+
+                val editor = mSharedPref.edit()
+                editor.putString("saved_gauge_id", newSite)
+                editor.apply()
+            }
+            return true
+        }
+
     }
 
 
@@ -472,12 +542,11 @@ class ComplicationConfigRecyclerViewAdapter(
 
     companion object {
 
-        private val TAG = "CompConfigAdapter"
+        private const val TAG = "CompConfigAdapter"
 
-        val TYPE_PREVIEW_AND_COMPLICATIONS_CONFIG = 0
-        val TYPE_MORE_OPTIONS = 1
-        val TYPE_COLOR_CONFIG = 2
-        val TYPE_UNREAD_NOTIFICATION_CONFIG = 3
-        val TYPE_BACKGROUND_COMPLICATION_IMAGE_CONFIG = 4
+        const val TYPE_PREVIEW_AND_COMPLICATIONS_CONFIG = 0
+        const val TYPE_MORE_OPTIONS = 1
+        const val TYPE_GAUGE_ID_CONFIG = 2
+        const val TYPE_UNREAD_NOTIFICATION_CONFIG = 3
     }
 }

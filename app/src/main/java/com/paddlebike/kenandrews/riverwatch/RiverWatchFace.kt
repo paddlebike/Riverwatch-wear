@@ -21,6 +21,7 @@ import android.util.Log
 import android.util.SparseArray
 import android.view.SurfaceHolder
 import android.view.WindowInsets
+import com.paddlebike.kenandrews.riverwatch.complicationProvider.USGSStreamLevelComplication
 import com.paddlebike.kenandrews.riverwatch.config.ComplicationConfigRecyclerViewAdapter
 
 import java.lang.ref.WeakReference
@@ -28,8 +29,12 @@ import java.util.Calendar
 import java.util.TimeZone
 
 import com.paddlebike.kenandrews.riverwatch.config.ComplicationConfigRecyclerViewAdapter.ComplicationLocation.LEFT
+import com.paddlebike.kenandrews.riverwatch.config.ComplicationConfigRecyclerViewAdapter.ComplicationLocation.CENTER
 import com.paddlebike.kenandrews.riverwatch.config.ComplicationConfigRecyclerViewAdapter.ComplicationLocation.RIGHT
 import com.paddlebike.kenandrews.riverwatch.config.ComplicationConfigRecyclerViewAdapter.ComplicationLocation.BOTTOM
+import net.danlew.android.joda.JodaTimeAndroid
+import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormat
 
 private const val TAG = "RiverWatchFace"
 /**
@@ -62,11 +67,12 @@ class RiverWatchFace : CanvasWatchFaceService() {
         private const val MSG_UPDATE_TIME = 0
 
         private val LEFT_COMPLICATION_ID = 100
-        private val RIGHT_COMPLICATION_ID = 101
-        private val BOTTOM_COMPLICATION_ID = 102
+        private val CENTER_COMPLICATION_ID = 101
+        private val RIGHT_COMPLICATION_ID = 102
+        private val BOTTOM_COMPLICATION_ID = 103
 
         // Background, Left and right complication IDs as array for Complication API.
-        private val COMPLICATION_IDS = intArrayOf(BOTTOM_COMPLICATION_ID, LEFT_COMPLICATION_ID, RIGHT_COMPLICATION_ID)
+        private val COMPLICATION_IDS = intArrayOf(LEFT_COMPLICATION_ID, CENTER_COMPLICATION_ID, RIGHT_COMPLICATION_ID, BOTTOM_COMPLICATION_ID)
 
         // supported types.
         private val COMPLICATION_SUPPORTED_TYPES = arrayOf(
@@ -81,7 +87,8 @@ class RiverWatchFace : CanvasWatchFaceService() {
                 intArrayOf(ComplicationData.TYPE_RANGED_VALUE,
                         ComplicationData.TYPE_ICON,
                         ComplicationData.TYPE_SHORT_TEXT,
-                        ComplicationData.TYPE_SMALL_IMAGE))
+                        ComplicationData.TYPE_SMALL_IMAGE),
+                intArrayOf(ComplicationData.TYPE_LONG_TEXT))
 
         // Used by {@link ComplicationConfigRecyclerViewAdapter} to check if complication location
         // is supported in settings config activity.
@@ -90,6 +97,7 @@ class RiverWatchFace : CanvasWatchFaceService() {
             // Add any other supported locations here.
             return when (complicationLocation) {
                 LEFT -> LEFT_COMPLICATION_ID
+                CENTER -> CENTER_COMPLICATION_ID
                 RIGHT -> RIGHT_COMPLICATION_ID
                 BOTTOM -> BOTTOM_COMPLICATION_ID
                 else -> -1
@@ -108,14 +116,16 @@ class RiverWatchFace : CanvasWatchFaceService() {
             // Add any other supported locations here.
             when (complicationLocation) {
                 LEFT -> return COMPLICATION_SUPPORTED_TYPES[0]
-                RIGHT -> return COMPLICATION_SUPPORTED_TYPES[1]
-                BOTTOM -> return COMPLICATION_SUPPORTED_TYPES[2]
+                CENTER -> return COMPLICATION_SUPPORTED_TYPES[1]
+                RIGHT -> return COMPLICATION_SUPPORTED_TYPES[2]
+                BOTTOM -> return COMPLICATION_SUPPORTED_TYPES[3]
                 else -> return intArrayOf()
             }
         }
     }
 
     override fun onCreateEngine(): Engine {
+        JodaTimeAndroid.init(this)
         return Engine()
     }
 
@@ -137,6 +147,7 @@ class RiverWatchFace : CanvasWatchFaceService() {
     inner class Engine : CanvasWatchFaceService.Engine() {
 
         private lateinit var mCalendar: Calendar
+        private var mStreamLevelComplication = USGSStreamLevelComplication()
 
         private var mRegisteredTimeZoneReceiver = false
 
@@ -215,8 +226,8 @@ class RiverWatchFace : CanvasWatchFaceService() {
         // Pulls all user's preferences for watch face appearance.
         private fun loadSavedPreferences() {
 
-            val gaugeId = applicationContext.getString(R.string.prefs_gauge_id)
-            Log.d(TAG, "Got Gauge ID from prefs: " + gaugeId)
+            val gaugeId = applicationContext.getString(R.string.prefs_site_id)
+            Log.d(TAG, "Got Site ID from prefs: " + gaugeId)
 
             val unreadNotificationPreferenceResourceName = applicationContext.getString(R.string.saved_unread_notifications_pref)
 
@@ -225,26 +236,27 @@ class RiverWatchFace : CanvasWatchFaceService() {
 
         private fun initializeComplications() {
             Log.d(TAG, "initializeComplications()")
+
+            val riverLevelProvider = ComponentName(applicationContext, ".complicationProvider.USGSStreamLevelComplication")
+            val riverSummaryProvider = ComponentName(applicationContext, ".complicationProvider.USGSStreamSummaryComplication")
+
             mComplicationDataArray = SparseArray<ComplicationData>(COMPLICATION_IDS.size)
             val left = ComplicationDrawable(applicationContext)
+            val center = ComplicationDrawable(applicationContext)
             val right = ComplicationDrawable(applicationContext)
             val bottom = ComplicationDrawable(applicationContext)
 
-
-            setDefaultSystemComplicationProvider(BOTTOM_COMPLICATION_ID, DATE, TYPE_SHORT_TEXT)
+            setDefaultComplicationProvider(LEFT_COMPLICATION_ID, riverLevelProvider, TYPE_SHORT_TEXT)
+            setDefaultSystemComplicationProvider(CENTER_COMPLICATION_ID, DATE, TYPE_SHORT_TEXT)
             setDefaultSystemComplicationProvider(RIGHT_COMPLICATION_ID, WATCH_BATTERY, TYPE_SHORT_TEXT)
-            setDefaultSystemComplicationProvider(LEFT_COMPLICATION_ID, UNREAD_NOTIFICATION_COUNT, TYPE_SHORT_TEXT)
-
-            // "com.paddlebike.kenandrews.riverwatch.USGSStreamLevelComplication"
-            val myProvider = ComponentName(applicationContext, "USGSStreamLevelComplication")
-            //val myProvider = ComponentName("RiverWatch", "River Level")
-            setDefaultComplicationProvider(LEFT_COMPLICATION_ID, myProvider, TYPE_SHORT_TEXT)
+            setDefaultComplicationProvider(BOTTOM_COMPLICATION_ID, riverSummaryProvider, TYPE_SHORT_TEXT)
 
 
             // Adds new complications to a SparseArray to simplify setting styles and ambient
             // properties for all complications, i.e., iterate over them all.
             mComplicationDrawableArray = SparseArray<ComplicationDrawable>(COMPLICATION_IDS.size)
             mComplicationDrawableArray!!.put(LEFT_COMPLICATION_ID, left)
+            mComplicationDrawableArray!!.put(CENTER_COMPLICATION_ID, center)
             mComplicationDrawableArray!!.put(RIGHT_COMPLICATION_ID, right)
             mComplicationDrawableArray!!.put(BOTTOM_COMPLICATION_ID, bottom)
 
@@ -351,53 +363,48 @@ class RiverWatchFace : CanvasWatchFaceService() {
         override fun onSurfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
             super.onSurfaceChanged(holder, format, width, height)
 
-            /*
-             * Calculates location bounds for right and left circular complications. Please note,
-             * we are not demonstrating a long text complication in this watch face.
-             *
-             * We suggest using at least 1/4 of the screen width for circular (or squared)
-             * complications and 2/3 of the screen width for wide rectangular complications for
-             * better readability.
-             */
 
             // For most Wear devices, width and height are the same, so we just chose one (width).
             val sizeOfComplication = width / 4
             val midpointOfScreen = width / 2
 
-            val horizontalOffset = (midpointOfScreen - sizeOfComplication) / 2
-            val verticalOffset = midpointOfScreen - sizeOfComplication / 2
+            val padding = 16
+            var horizontalOffset = padding
+            var verticalOffset = midpointOfScreen - sizeOfComplication / 2
 
             val leftBounds =
                     // Left, Top, Right, Bottom
-                    Rect(
-                            16,
-                            verticalOffset,
-                            horizontalOffset + sizeOfComplication,
-                            verticalOffset + sizeOfComplication)
+                    Rect(horizontalOffset, verticalOffset,
+                            horizontalOffset + sizeOfComplication, verticalOffset + sizeOfComplication)
+
+            horizontalOffset += sizeOfComplication + padding
 
             val leftComplicationDrawable = mComplicationDrawableArray!!.get(LEFT_COMPLICATION_ID)
             leftComplicationDrawable.bounds = leftBounds
 
+            val centerBound =
+                    // Left, Top, Right, Bottom
+                    Rect(horizontalOffset, verticalOffset,
+                            horizontalOffset + sizeOfComplication,
+                            verticalOffset + sizeOfComplication)
+
+            horizontalOffset += sizeOfComplication + padding
+            val centerComplicationDrawable = mComplicationDrawableArray!!.get(CENTER_COMPLICATION_ID)
+            centerComplicationDrawable.bounds = centerBound
+
             val rightBounds =
                     // Left, Top, Right, Bottom
-                    Rect(
-                            midpointOfScreen + horizontalOffset,
-                            verticalOffset,
-                            midpointOfScreen + horizontalOffset + sizeOfComplication,
+                    Rect(horizontalOffset, verticalOffset,
+                             horizontalOffset + sizeOfComplication,
                             verticalOffset + sizeOfComplication)
 
             val rightComplicationDrawable = mComplicationDrawableArray!!.get(RIGHT_COMPLICATION_ID)
             rightComplicationDrawable.bounds = rightBounds
 
-            val bottomBound =
-                    // Left, Top, Right, Bottom
-                    Rect(midpointOfScreen - (sizeOfComplication/2),
-                            verticalOffset,
-                            midpointOfScreen + sizeOfComplication,
-                            verticalOffset + sizeOfComplication)
-
+            verticalOffset += padding + sizeOfComplication
+            val bottomBounds = Rect(padding, verticalOffset, width - padding, width - padding)
             val bottomComplicationDrawable = mComplicationDrawableArray!!.get(BOTTOM_COMPLICATION_ID)
-            bottomComplicationDrawable.bounds = bottomBound
+            bottomComplicationDrawable.bounds = bottomBounds
         }
 
 
@@ -410,14 +417,12 @@ class RiverWatchFace : CanvasWatchFaceService() {
                         0f, 0f, bounds.width().toFloat(), bounds.height().toFloat(), mBackgroundPaint)
             }
 
-            // Draw H:MM in ambient mode or H:MM:SS in interactive mode.
-            val now = System.currentTimeMillis()
-            mCalendar.timeInMillis = now
+            val now = DateTime.now()
+            mCalendar.timeInMillis = now.millis
 
-            drawComplications(canvas, now)
-
-            val timeString = String.format("%d:%02d", mCalendar.get(Calendar.HOUR), mCalendar.get(Calendar.MINUTE))
-
+            drawComplications(canvas, now.millis)
+            val formatter = DateTimeFormat.forPattern("HH:mm")
+            val timeString = now.toString(formatter)
            canvas.drawText(timeString, mXOffset, mYOffset, mTextPaint)
 
         }

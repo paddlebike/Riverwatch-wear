@@ -49,6 +49,7 @@ dependencies {
     compile "org.jetbrains.anko:anko:$anko_version"
     provided 'com.google.android.wearable:wearable:2.1.0'
     compile 'com.android.support:wear:27.0.2'
+    compile 'net.danlew:android.joda:2.9.9.1'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'

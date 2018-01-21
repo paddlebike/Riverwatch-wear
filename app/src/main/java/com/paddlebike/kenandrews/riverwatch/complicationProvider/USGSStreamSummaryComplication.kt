@@ -5,16 +5,23 @@ import android.support.wearable.complications.ComplicationManager
 import android.support.wearable.complications.ComplicationProviderService
 import android.support.wearable.complications.ComplicationText
 import android.util.Log
-import com.paddlebike.kenandrews.riverwatch.GaugeConstants
+import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.ERROR_VALUE
+import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.GAUGE_FLOW
+import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.GAUGE_LEVEL
+import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.GAUGE_TEMP
 import com.paddlebike.kenandrews.riverwatch.R
+import com.paddlebike.kenandrews.riverwatch.USGSGuage
+import net.danlew.android.joda.JodaTimeAndroid
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
+import org.joda.time.format.DateTimeFormat
 
-private const val TAG = "USGSGaugeLevel"
+
+private const val TAG = "USGSSiteSummary"
 /**
- * Complication for getting streamflow data
+ * Complication for getting long summary of a site
  */
-class USGSStreamLevelComplication : ComplicationProviderService() {
+class USGSStreamSummaryComplication : ComplicationProviderService() {
 
     /*
      * Called when a complication has been activated. The method is for any one-time
@@ -26,6 +33,7 @@ class USGSStreamLevelComplication : ComplicationProviderService() {
     override fun onComplicationActivated(
             complicationId: Int, dataType: Int, complicationManager: ComplicationManager?) {
         Log.d(TAG, "onComplicationActivated(): " + complicationId)
+        JodaTimeAndroid.init(this)
 
     }
 
@@ -43,13 +51,12 @@ class USGSStreamLevelComplication : ComplicationProviderService() {
             complicationId: Int, dataType: Int, complicationManager: ComplicationManager) {
         Log.d(TAG, "onComplicationUpdate() id: " + complicationId)
 
-        val gaugeModel = ComplicationSiteModel
-        val gaugeId = getGaugeId()
-        val localGauge = gaugeModel.getGaugeModel(gaugeId)
+        val siteModel = ComplicationSiteModel
+        val siteId = getSiteId()
+        val model = siteModel.getGaugeModel(siteId)
 
         doAsync {
-            val gaugeValue = localGauge.getValueForKey(GaugeConstants.GAUGE_LEVEL)
-            val complicationData = createComplicationData(gaugeValue!!, dataType)
+            val complicationData = createComplicationData(model.getSite(), dataType)
             uiThread {
                 updateComplication(complicationData, complicationId, complicationManager)
             }
@@ -68,8 +75,8 @@ class USGSStreamLevelComplication : ComplicationProviderService() {
      * Send the complication data back to the ComplicationManager
      */
     private fun updateComplication(complicationData: ComplicationData?,
-                           complicationId: Int,
-                           complicationManager: ComplicationManager) {
+                                   complicationId: Int,
+                                   complicationManager: ComplicationManager) {
 
         if (complicationData != null) {
             complicationManager.updateComplicationData(complicationId, complicationData)
@@ -84,17 +91,10 @@ class USGSStreamLevelComplication : ComplicationProviderService() {
     /**
      * Create the complication data
      */
-    private fun createComplicationData(gaugeValue: Float, dataType: Int) : ComplicationData? {
+    private fun createComplicationData(site: USGSGuage.Site, dataType: Int) : ComplicationData? {
         when (dataType) {
-
-            ComplicationData.TYPE_SHORT_TEXT -> {
-                val text = if (gaugeValue == GaugeConstants.ERROR_VALUE) "frozen" else String.format("%2.02fft", gaugeValue)
-                return ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
-                        .setShortText(ComplicationText.plainText(text))
-                        .build()
-            }
             ComplicationData.TYPE_LONG_TEXT -> {
-                val text = if (gaugeValue == GaugeConstants.ERROR_VALUE) "frozen" else String.format("Level: %2.02fft", gaugeValue)
+                val text = createSummaryString(site)
                 return ComplicationData.Builder(ComplicationData.TYPE_LONG_TEXT)
                         .setLongText(ComplicationText.plainText(text))
                         .build()
@@ -106,16 +106,37 @@ class USGSStreamLevelComplication : ComplicationProviderService() {
         return null
     }
 
+    private fun createSummaryString(site: USGSGuage.Site) : String {
+        val level = if (site.parameters.containsKey(GAUGE_LEVEL)) {
+            if (site.getValueForKey(GAUGE_LEVEL) == ERROR_VALUE) "ICE "
+            else String.format("%2.02fft ", site.getValueForKey(GAUGE_LEVEL))
+        } else if (site.parameters.containsKey(GAUGE_FLOW)) {
+                if (site.getValueForKey(GAUGE_FLOW) == ERROR_VALUE) "ICE "
+                else String.format("%d cfs ", site.getValueForKey(GAUGE_FLOW).toInt())
+        } else {
+            ""
+        }
 
-    private fun getGaugeId() :String {
+        val temp = if (site.parameters.containsKey(GAUGE_TEMP))
+            String.format("%2.1fC ", site.getValueForKey(GAUGE_TEMP))
+        else
+            ""
+
+        val formatter = DateTimeFormat.forPattern("HH:mm")
+        val age = site.getTimeStamp().toString(formatter)
+        return String.format("%s %s at %s", level, temp, age)
+    }
+
+    private fun getSiteId() :String {
         try {
-            val defaultGaugeId = this.applicationContext.getString(R.string.site_id)
+            val defaultSiteId = this.applicationContext.getString(R.string.site_id)
             val key = this.applicationContext.getString(R.string.watchface_prefs)
             val prefs = this.applicationContext.getSharedPreferences(key, 0)
-            return prefs.getString("saved_gauge_id", defaultGaugeId)
+            return prefs.getString(this.applicationContext.getString(R.string.prefs_site_id), defaultSiteId)
         } catch (e: Exception) {
             Log.e(TAG, "Exception getting stuff")
         }
         return getString(R.string.site_id)
     }
 }
+

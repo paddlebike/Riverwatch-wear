@@ -21,7 +21,7 @@
             android:value="true" />
 
         <service
-            android:name="com.paddlebike.kenandrews.riverwatch.RiverWatchFace"
+            android:name="RiverWatchFace"
             android:label="@string/my_digital_name"
             android:permission="android.permission.BIND_WALLPAPER">
             <meta-data
@@ -35,7 +35,7 @@
                 android:resource="@drawable/preview_digital_circular" />
             <meta-data
                 android:name="com.google.android.wearable.watchface.wearableConfigurationAction"
-                android:value="com.paddlebike.kenandrews.riverwatch.CONFIG_COMPLICATION_SIMPLE"/>
+                android:value="CONFIG_COMPLICATION_SIMPLE"/>
             <intent-filter>
                 <action android:name="android.service.wallpaper.WallpaperService" />
 
@@ -49,7 +49,7 @@
             android:name=".config.ComplicationConfigActivity"
             android:label="@string/complication_config">
             <intent-filter>
-                <action android:name="com.paddlebike.kenandrews.riverwatch.CONFIG_COMPLICATION_SIMPLE"/>
+                <action android:name="CONFIG_COMPLICATION_SIMPLE"/>
 
                 <category android:name="com.google.android.wearable.watchface.category.WEARABLE_CONFIGURATION"/>
                 <category android:name="android.intent.category.DEFAULT"/>
@@ -57,7 +57,7 @@
         </activity>
 
         <service
-            android:name="com.paddlebike.kenandrews.riverwatch.complicationProvider.USGSStreamLevelComplication"
+            android:name=".complicationProvider.USGSStreamLevelComplication"
             android:label="@string/complications_provider_usgs_level"
             android:icon="@drawable/weather_rain"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
@@ -72,10 +72,13 @@
             <meta-data
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
                 android:value="900"/>
+            <meta-data
+                android:name="METADATA_KEY_SAFE_WATCH_FACES"
+                android:value="@string/my_digital_name"/>
         </service>
 
         <service
-            android:name="com.paddlebike.kenandrews.riverwatch.complicationProvider.USGSStreamFlowComplication"
+            android:name=".complicationProvider.USGSStreamFlowComplication"
             android:label="@string/complications_provider_usgs_flow"
             android:icon="@drawable/weather_rain"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
@@ -93,7 +96,7 @@
         </service>
 
         <service
-            android:name="com.paddlebike.kenandrews.riverwatch.complicationProvider.USGSStreamTempComplication"
+            android:name=".complicationProvider.USGSStreamTempComplication"
             android:label="@string/complications_provider_usgs_temp"
             android:icon="@drawable/thermometer"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
@@ -104,6 +107,25 @@
             <meta-data
                 android:name="android.support.wearable.complications.SUPPORTED_TYPES"
                 android:value="SHORT_TEXT,LONG_TEXT,RANGED_VALUE"/>
+
+            <meta-data
+                android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
+                android:value="900"/>
+        </service>
+
+
+        <service
+            android:name=".complicationProvider.USGSStreamSummaryComplication"
+            android:label="@string/complications_provider_usgs_summary"
+            android:icon="@drawable/ic_access_time_black_24dp"
+            android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
+            <intent-filter>
+                <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST"/>
+            </intent-filter>
+
+            <meta-data
+                android:name="android.support.wearable.complications.SUPPORTED_TYPES"
+                android:value="LONG_TEXT"/>
 
             <meta-data
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"

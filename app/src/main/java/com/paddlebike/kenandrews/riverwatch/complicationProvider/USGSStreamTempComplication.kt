@@ -1,5 +1,6 @@
 package com.paddlebike.kenandrews.riverwatch.complicationProvider
 
+import android.graphics.drawable.Icon
 import android.support.wearable.complications.ComplicationData
 import android.support.wearable.complications.ComplicationManager
 import android.support.wearable.complications.ComplicationProviderService
@@ -44,8 +45,8 @@ class USGSStreamTempComplication : ComplicationProviderService() {
             complicationId: Int, dataType: Int, complicationManager: ComplicationManager) {
         Log.d(TAG, "onComplicationUpdate() id: " + complicationId)
 
-        val gaugeModel = ComplicationGaugeModel
-        val gaugeId = getGaugeId()
+        val gaugeModel = ComplicationSiteModel
+        val gaugeId = getSiteId()
         val localGauge = gaugeModel.getGaugeModel(gaugeId)
 
         doAsync {
@@ -88,12 +89,15 @@ class USGSStreamTempComplication : ComplicationProviderService() {
     private fun createComplicationData(gaugeValue: Float, dataType: Int) : ComplicationData? {
         when (dataType) {
             ComplicationData.TYPE_SHORT_TEXT -> return ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
+                    .setIcon(Icon.createWithResource(this.applicationContext, R.drawable.thermometer))
                     .setShortText(ComplicationText.plainText(String.format("%2.1f C", gaugeValue)))
                     .build()
             ComplicationData.TYPE_LONG_TEXT -> return ComplicationData.Builder(ComplicationData.TYPE_LONG_TEXT)
+                    .setIcon(Icon.createWithResource(this.applicationContext, R.drawable.thermometer))
                     .setLongText(ComplicationText.plainText(String.format("Temp: %2.1fC", gaugeValue)))
                     .build()
             ComplicationData.TYPE_RANGED_VALUE -> return ComplicationData.Builder(ComplicationData.TYPE_RANGED_VALUE)
+                    .setIcon(Icon.createWithResource(this.applicationContext, R.drawable.thermometer))
                     .setMinValue(0F)
                     .setValue(gaugeValue)
                     .setMaxValue(50F)
@@ -107,15 +111,16 @@ class USGSStreamTempComplication : ComplicationProviderService() {
     }
 
 
-    private fun getGaugeId() :String {
+    private fun getSiteId() :String {
+        val defaultSiteId = this.applicationContext.getString(R.string.site_id)
         try {
-            val defaultGaugeId = this.applicationContext.getString(R.string.gauge_id)
-            val key = "com.paddlebike.kenandrews.riverwatch.COMPLICATION_PROVIDER_PREFERENCES_FILE_KEY"
+            val key = this.applicationContext.getString(R.string.watchface_prefs)
             val prefs = this.applicationContext.getSharedPreferences(key, 0)
-            return prefs.getString("saved_gauge_id", defaultGaugeId)
+            val stationId =  prefs.getString("saved_gauge_id", defaultSiteId)
+            return stationId
         } catch (e: Exception) {
             Log.e(TAG, "Exception getting stuff")
         }
-        return getString(R.string.gauge_id)
+        return defaultSiteId
     }
 }

@@ -4,8 +4,14 @@ import android.util.Log
 import com.beust.klaxon.JsonArray
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Parser
+import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.GAUGE_FLOW
+import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.GAUGE_LEVEL
+import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.GAUGE_TEMP
+import org.joda.time.DateTime
+import org.joda.time.DateTimeZone
 
 import java.net.URL
+import java.util.*
 
 class GaugeConstants {
     companion object {
@@ -24,9 +30,9 @@ private const val TAG = "USGSGauge"
 class USGSGuage {
 
     companion object {
-        fun fetch(gaugeId: String): Gauge {
-            Log.d(TAG, "Fetching the gauge data for: " + gaugeId)
-            val response = URL("https://waterservices.usgs.gov/nwis/iv/?&period=P1D&format=json&parameterCd=00065,00060,00010&sites=$gaugeId").openStream()
+        fun fetch(siteId: String): Site {
+            Log.d(TAG, "Fetching the gauge data for: " + siteId)
+            val response = URL("https://waterservices.usgs.gov/nwis/iv/?&period=P1D&format=json&parameterCd=00065,00060,00010&sites=$siteId").openStream()
             Log.d(TAG, "Got response: " + response.toString())
 
             val klx = Parser().parse(response) as? JsonObject ?:
@@ -68,13 +74,13 @@ class USGSGuage {
 
             }
 
-            return Gauge(site, siteName, parameters)
+            return Site(site, siteName, parameters)
         }
     }
 
 
 
-    class Gauge (val siteId: String, val name: String, val parameters: HashMap<String,GaugeParameter>) {
+    class Site(val siteId: String, val name: String, val parameters: HashMap<String,GaugeParameter>) {
         override fun toString(): String {
             return String.format("Site: %s Name: %s\n%s", siteId, name, showParameters())
         }
@@ -93,13 +99,42 @@ class USGSGuage {
             return  parameters[key]?.value ?: 0.0F
         }
 
+        fun getAge(): Long {
+            when {
+                parameters.containsKey(GAUGE_LEVEL) -> return parameters[GAUGE_LEVEL]!!.getAge()
+                parameters.containsKey(GAUGE_FLOW) -> return parameters[GAUGE_LEVEL]!!.getAge()
+                parameters.containsKey(GAUGE_TEMP) -> return parameters[GAUGE_LEVEL]!!.getAge()
+                else -> return -1
+            }
+        }
+
+        fun getTimeStamp() : DateTime {
+            when {
+                parameters.containsKey(GAUGE_LEVEL) -> return parameters[GAUGE_LEVEL]!!.getTimeStamp()
+                parameters.containsKey(GAUGE_FLOW) -> return parameters[GAUGE_LEVEL]!!.getTimeStamp()
+                parameters.containsKey(GAUGE_TEMP) -> return parameters[GAUGE_LEVEL]!!.getTimeStamp()
+                else -> return DateTime(-1)
+            }
+        }
 
     }
 
 
     class GaugeParameter (val value: Float, val date: String) {
         override fun toString(): String {
-            return String.format("Last value: %f at: %s", value, date)
+            return String.format("Last value: %f %d minutes ago", value, getAge()/(1000*60))
+        }
+
+        fun getAge(): Long {
+            val gaugeTime = DateTime(date)
+            val currentTime = DateTime()
+            val delta = currentTime.minus(gaugeTime.millis)
+            return delta.millis
+        }
+
+        fun getTimeStamp() : DateTime {
+            val tz = DateTimeZone.getDefault()
+            return DateTime(date).withZone(tz)
         }
     }
 }

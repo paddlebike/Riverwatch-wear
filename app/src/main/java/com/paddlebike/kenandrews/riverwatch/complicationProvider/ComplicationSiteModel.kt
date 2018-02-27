@@ -1,28 +1,22 @@
 package com.paddlebike.kenandrews.riverwatch.complicationProvider
 
-import com.paddlebike.kenandrews.riverwatch.USGSGuage
+import com.paddlebike.kenandrews.riverwatch.USGSSite
 
 /**
  * Singleton class for managing the monitored site
  */
 const val MAX_CACHED_AGE = 15 * 60 * 1000 // 15 minutes
-class SiteModel(siteId: String) {
-    var lastUpdated: Long = 0
-    val siteId = siteId
-    private var site: USGSGuage.Site? = null
+class SiteModel(private val siteId: String) {
+    private var lastUpdated: Long = 0
+    private var site: USGSSite.Site? = null
 
-    public fun updateGauge(site: USGSGuage.Site) {
-        this.site = site
-        this.lastUpdated = System.currentTimeMillis()
-    }
-
-    public fun isStale() : Boolean {
+    private fun isStale() : Boolean {
         return this.site == null || this.lastUpdated + MAX_CACHED_AGE < System.currentTimeMillis()
     }
 
-    public fun getValueForKey(key: String) : Float? {
-        if (isStale() && this.siteId != null) {
-            this.site = USGSGuage.fetch(this.siteId!!)
+    fun getValueForKey(key: String) : Float? {
+        if (isStale() ) {
+            this.site = USGSSite.fetch(this.siteId)
             if (this.site != null) {
                 this.lastUpdated = System.currentTimeMillis()
             }
@@ -30,7 +24,10 @@ class SiteModel(siteId: String) {
         return this.site!!.getValueForKey(key)
     }
 
-    public fun getSite() : USGSGuage.Site {
+    fun getSite() : USGSSite.Site {
+        if (this.site == null) {
+            this.site = USGSSite.fetch(this.siteId)
+        }
         return this.site!!
     }
 }
@@ -38,11 +35,11 @@ class SiteModel(siteId: String) {
 object ComplicationSiteModel {
     private var sites: HashMap<String, SiteModel> = HashMap(emptyMap<String, SiteModel>())
 
-    public fun getGaugeModel(siteId: String) : SiteModel {
+    fun getGaugeModel(siteId: String) : SiteModel {
         return if (sites.containsKey(siteId)) {
             sites[siteId]!!
         } else {
-            sites.put(siteId, SiteModel(siteId))
+            sites[siteId] = SiteModel(siteId)
             sites[siteId]!!
         }
     }

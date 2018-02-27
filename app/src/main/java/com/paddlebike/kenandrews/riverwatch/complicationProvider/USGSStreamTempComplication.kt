@@ -6,10 +6,10 @@ import android.support.wearable.complications.ComplicationManager
 import android.support.wearable.complications.ComplicationProviderService
 import android.support.wearable.complications.ComplicationText
 import android.util.Log
-import com.paddlebike.kenandrews.riverwatch.GaugeConstants
-import com.paddlebike.kenandrews.riverwatch.R
+import com.paddlebike.kenandrews.riverwatch.*
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
+import org.joda.time.format.DateTimeFormat
 
 
 private const val TAG = "USGSGaugeTemp"
@@ -45,13 +45,18 @@ class USGSStreamTempComplication : ComplicationProviderService() {
             complicationId: Int, dataType: Int, complicationManager: ComplicationManager) {
         Log.d(TAG, "onComplicationUpdate() id: " + complicationId)
 
-        val gaugeModel = ComplicationSiteModel
-        val gaugeId = getSiteId()
-        val localGauge = gaugeModel.getGaugeModel(gaugeId)
-
+        val siteData = USGSSitePrefs(this.applicationContext)
+        var complicationData: ComplicationData?
+        val siteId = getSiteId()
         doAsync {
-            val gaugeValue = localGauge.getValueForKey(GaugeConstants.GAUGE_TEMP)
-            val complicationData = createComplicationData(gaugeValue!!, dataType)
+            try {
+                val site = USGSSite.fetch(siteId)
+                siteData.saveSite(site)
+            }catch (e: Exception) {
+                Log.e(TAG, e.toString())
+            }
+            val gaugeValue = siteData.getGaugeFloat(siteId, GaugeConstants.GAUGE_TEMP, PrefsConstants.LAST_VAL)
+            val complicationData = createComplicationData(gaugeValue, dataType)
             uiThread {
                 updateComplication(complicationData, complicationId, complicationManager)
             }

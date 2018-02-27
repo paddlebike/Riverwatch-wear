@@ -169,10 +169,10 @@ class ComplicationConfigRecyclerViewAdapter(
             TYPE_PREVIEW_AND_COMPLICATIONS_CONFIG -> {
                 val previewAndComplicationsViewHolder = viewHolder as PreviewAndComplicationsViewHolder
 
-                val previewAndComplicationsConfigItem = configItemType as ComplicationConfigData.PreviewAndComplicationsConfigItem
+                //val previewAndComplicationsConfigItem = configItemType as ComplicationConfigData.PreviewAndComplicationsConfigItem
 
-                val defaultComplicationResourceId = previewAndComplicationsConfigItem.defaultComplicationResourceId
-                previewAndComplicationsViewHolder.setDefaultComplicationDrawable(defaultComplicationResourceId)
+                //val defaultComplicationResourceId = previewAndComplicationsConfigItem.defaultComplicationResourceId
+                previewAndComplicationsViewHolder.setDefaultComplicationDrawable()
 
                 previewAndComplicationsViewHolder.initializeComplications()
             }
@@ -339,7 +339,7 @@ class ComplicationConfigRecyclerViewAdapter(
             }
         }
 
-        fun setDefaultComplicationDrawable(resourceId: Int) {
+        fun setDefaultComplicationDrawable() {
 
             mLeftComplication.setImageDrawable(mDefaultComplicationDrawable)
             mLeftComplicationBackground.visibility = View.INVISIBLE
@@ -430,7 +430,7 @@ class ComplicationConfigRecyclerViewAdapter(
     /** Numeric text box for entering the gauge ID.  */
     inner class GaugeIdViewHolder(view: View) : RecyclerView.ViewHolder(view), TextView.OnEditorActionListener  {
 
-        private var mGaugeIdTextView: TextView?? = view.findViewById(R.id.stationIdEditBox) as TextView
+        private var mGaugeIdTextView: TextView? = view.findViewById(R.id.stationIdEditBox) as TextView
 
         init {
             mGaugeIdTextView!!.setOnEditorActionListener(this)

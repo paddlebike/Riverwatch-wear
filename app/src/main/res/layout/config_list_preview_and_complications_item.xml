@@ -32,6 +32,7 @@ based on changes by the user.
         android:orientation="horizontal">
 
         <RelativeLayout
+            android:paddingStart="16dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
@@ -40,9 +41,8 @@ based on changes by the user.
             <ImageView
                 android:id="@+id/left_complication_background"
                 style="?android:borderlessButtonStyle"
-                android:layout_width="wrap_content"
-
-                android:layout_height="wrap_content"
+                android:layout_width="@dimen/gauge_size"
+                android:layout_height="@dimen/gauge_size"
                 android:background="@android:color/transparent"
                 android:importantForAccessibility="no"
                 android:src="@drawable/added_complication" />
@@ -50,8 +50,8 @@ based on changes by the user.
             <ImageButton
                 android:id="@+id/left_complication"
                 style="?android:borderlessButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="@dimen/gauge_size"
+                android:layout_height="@dimen/gauge_size"
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
                 android:background="@android:color/transparent" />
@@ -66,8 +66,8 @@ based on changes by the user.
             <ImageView
                 android:id="@+id/center_complication_background"
                 style="?android:borderlessButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="@dimen/gauge_size"
+                android:layout_height="@dimen/gauge_size"
                 android:background="@android:color/transparent"
                 android:importantForAccessibility="no"
                 android:src="@drawable/added_complication" />
@@ -75,22 +75,23 @@ based on changes by the user.
             <ImageButton
                 android:id="@+id/center_complication"
                 style="?android:borderlessButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="@dimen/gauge_size"
+                android:layout_height="@dimen/gauge_size"
                 android:background="@android:color/transparent" />
         </RelativeLayout>
 
         <RelativeLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:paddingEnd="16dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true">
 
             <ImageView
                 android:id="@+id/right_complication_background"
                 style="?android:borderlessButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="@dimen/gauge_size"
+                android:layout_height="@dimen/gauge_size"
                 android:background="@android:color/transparent"
                 android:importantForAccessibility="no"
                 android:src="@drawable/added_complication" />
@@ -98,8 +99,8 @@ based on changes by the user.
             <ImageButton
                 android:id="@+id/right_complication"
                 style="?android:borderlessButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="@dimen/gauge_size"
+                android:layout_height="@dimen/gauge_size"
                 android:background="@android:color/transparent" />
         </RelativeLayout>
     </RelativeLayout>
@@ -127,6 +128,6 @@ based on changes by the user.
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
-            android:background="@android:color/transparent" />
+            android:background="@android:color/holo_green_dark" />
     </RelativeLayout>
 </RelativeLayout>

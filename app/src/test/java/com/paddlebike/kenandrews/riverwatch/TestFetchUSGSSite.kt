@@ -17,15 +17,15 @@ class TestFetchUSGSSite {
 
     @Test
     fun getsGauge() {
-        val response = USGSGuage.fetch("01646500")
-        assert(response is USGSGuage.Site)
+        val response = USGSSite.fetch("01646500")
+        assert(response is USGSSite.Site)
         println(response)
     }
 
     @Test
     fun reportsAge() {
-        val response = USGSGuage.fetch("01646500")
-        assert(response is USGSGuage.Site)
+        val response = USGSSite.fetch("01646500")
+        assert(response is USGSSite.Site)
         println(response)
         val age = response.getAge()
         assert(age != -1L)
@@ -37,9 +37,28 @@ class TestFetchUSGSSite {
 
     @Test
     fun reportsTimeStamp() {
-        val site: USGSGuage.Site = USGSGuage.fetch("01646500")
+        val site: USGSSite.Site = USGSSite.fetch("01646500")
         println(site.getTimeStamp().toLocalTime().toString())
         val formatter = DateTimeFormat.forPattern("HH:mm")
         println(site.getTimeStamp().toString(formatter))
     }
+
+    @Test
+    fun fetchToStringReturnsAString() {
+        val response = USGSSite.fetchToString("01646500")
+        assert(response is String)
+        println(response)
+    }
+
+    @Test
+    fun parseReturnsAGauge() {
+        val jsonString = USGSSite.fetchToString("01646500")
+        println(jsonString)
+        val site = USGSSite.parseJson(jsonString)
+        //println(site.getTimeStamp().toLocalTime().toString())
+        val formatter = DateTimeFormat.forPattern("HH:mm")
+        println(site.getTimeStamp().toString(formatter))
+    }
+
+
 }

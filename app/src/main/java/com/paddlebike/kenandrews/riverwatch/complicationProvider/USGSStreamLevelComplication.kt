@@ -5,8 +5,7 @@ import android.support.wearable.complications.ComplicationManager
 import android.support.wearable.complications.ComplicationProviderService
 import android.support.wearable.complications.ComplicationText
 import android.util.Log
-import com.paddlebike.kenandrews.riverwatch.GaugeConstants
-import com.paddlebike.kenandrews.riverwatch.R
+import com.paddlebike.kenandrews.riverwatch.*
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 
@@ -43,13 +42,21 @@ class USGSStreamLevelComplication : ComplicationProviderService() {
             complicationId: Int, dataType: Int, complicationManager: ComplicationManager) {
         Log.d(TAG, "onComplicationUpdate() id: " + complicationId)
 
-        val gaugeModel = ComplicationSiteModel
-        val gaugeId = getGaugeId()
-        val localGauge = gaugeModel.getGaugeModel(gaugeId)
 
+        val siteData = USGSSitePrefs(this.applicationContext)
+        var complicationData: ComplicationData?
+        val siteId = getSiteId()
         doAsync {
-            val gaugeValue = localGauge.getValueForKey(GaugeConstants.GAUGE_LEVEL)
-            val complicationData = createComplicationData(gaugeValue!!, dataType)
+            try {
+                val site = USGSSite.fetch(siteId)
+                siteData.saveSite(site)
+            }catch (e: Exception) {
+                Log.e(TAG, e.toString())
+            }
+            val gaugeValue = siteData.getGaugeFloat(siteId, GaugeConstants.GAUGE_LEVEL, PrefsConstants.LAST_VAL)
+            val minValue = siteData.getGaugeFloat(siteId, GaugeConstants.GAUGE_LEVEL, PrefsConstants.MIN_VAL)
+            val maxValue = siteData.getGaugeFloat(siteId, GaugeConstants.GAUGE_LEVEL, PrefsConstants.MAX_VAL)
+            val complicationData = createComplicationData(gaugeValue, minValue, maxValue, dataType)
             uiThread {
                 updateComplication(complicationData, complicationId, complicationManager)
             }
@@ -84,7 +91,7 @@ class USGSStreamLevelComplication : ComplicationProviderService() {
     /**
      * Create the complication data
      */
-    private fun createComplicationData(gaugeValue: Float, dataType: Int) : ComplicationData? {
+    private fun createComplicationData(gaugeValue: Float, minValue: Float, maxValue: Float, dataType: Int) : ComplicationData? {
         when (dataType) {
 
             ComplicationData.TYPE_SHORT_TEXT -> {
@@ -99,6 +106,15 @@ class USGSStreamLevelComplication : ComplicationProviderService() {
                         .setLongText(ComplicationText.plainText(text))
                         .build()
             }
+            ComplicationData.TYPE_RANGED_VALUE -> {
+                val text = if (gaugeValue == GaugeConstants.ERROR_VALUE) "frozen" else String.format("%2.02fft", gaugeValue)
+                return ComplicationData.Builder(ComplicationData.TYPE_RANGED_VALUE)
+                        .setValue(gaugeValue)
+                        .setMinValue(minValue)
+                        .setMaxValue(maxValue)
+                        .setShortText(ComplicationText.plainText(text))
+                        .build()
+            }
             else -> if (Log.isLoggable(TAG, Log.WARN)) {
                 Log.w(TAG, "Unexpected complication type " + dataType)
             }
@@ -107,12 +123,12 @@ class USGSStreamLevelComplication : ComplicationProviderService() {
     }
 
 
-    private fun getGaugeId() :String {
+    private fun getSiteId() :String {
         try {
-            val defaultGaugeId = this.applicationContext.getString(R.string.site_id)
+            val defaultSiteId = this.applicationContext.getString(R.string.site_id)
             val key = this.applicationContext.getString(R.string.watchface_prefs)
             val prefs = this.applicationContext.getSharedPreferences(key, 0)
-            return prefs.getString("saved_gauge_id", defaultGaugeId)
+            return prefs.getString(this.applicationContext.getString(R.string.prefs_site_id), defaultSiteId)
         } catch (e: Exception) {
             Log.e(TAG, "Exception getting stuff")
         }

@@ -9,6 +9,6 @@ Written in kotlin with complications providing
  The current implementation does not support the configuration of the monitored gauge.
  
  Future versions will (hopefully) allow the 
-  - Guage id to be selected
+  - Gauge id to be selected
   - Min and Max values for Level and Volume
   - Selection of metric or imperial units

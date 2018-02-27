@@ -9,8 +9,10 @@ import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.ERROR_VALUE
 import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.GAUGE_FLOW
 import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.GAUGE_LEVEL
 import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.GAUGE_TEMP
+import com.paddlebike.kenandrews.riverwatch.PrefsConstants
 import com.paddlebike.kenandrews.riverwatch.R
-import com.paddlebike.kenandrews.riverwatch.USGSGuage
+import com.paddlebike.kenandrews.riverwatch.USGSSite
+import com.paddlebike.kenandrews.riverwatch.USGSSitePrefs
 import net.danlew.android.joda.JodaTimeAndroid
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
@@ -22,7 +24,6 @@ private const val TAG = "USGSSiteSummary"
  * Complication for getting long summary of a site
  */
 class USGSStreamSummaryComplication : ComplicationProviderService() {
-
     /*
      * Called when a complication has been activated. The method is for any one-time
      * (per complication) set-up.
@@ -51,12 +52,33 @@ class USGSStreamSummaryComplication : ComplicationProviderService() {
             complicationId: Int, dataType: Int, complicationManager: ComplicationManager) {
         Log.d(TAG, "onComplicationUpdate() id: " + complicationId)
 
-        val siteModel = ComplicationSiteModel
+        val siteData = USGSSitePrefs(this.applicationContext)
+        val formatter = DateTimeFormat.forPattern("HH:mm")
+        var complicationData: ComplicationData?
         val siteId = getSiteId()
-        val model = siteModel.getGaugeModel(siteId)
 
         doAsync {
-            val complicationData = createComplicationData(model.getSite(), dataType)
+            try {
+                val site = USGSSite.fetch(siteId)
+                siteData.saveSite(site)
+            }catch (e: Exception) {
+                Log.e(TAG, e.toString())
+            }
+            val age = siteData.getGaugeTimeStamp(siteId, GAUGE_LEVEL)
+            val level = siteData.getGaugeFloat(siteId, GAUGE_LEVEL, PrefsConstants.LAST_VAL)
+            val temp = siteData.getGaugeFloat(siteId, GAUGE_TEMP, PrefsConstants.LAST_VAL)
+
+            var levelString = String.format("%2.02fft ", level)
+            if (level == ERROR_VALUE) {
+                levelString = "ICE "
+            }
+
+            val tempString = String.format("%2.1fC ", temp)
+
+            val ageString = age.toString(formatter)
+
+            complicationData = createComplicationData(ageString, tempString, levelString, dataType)
+
             uiThread {
                 updateComplication(complicationData, complicationId, complicationManager)
             }
@@ -91,10 +113,10 @@ class USGSStreamSummaryComplication : ComplicationProviderService() {
     /**
      * Create the complication data
      */
-    private fun createComplicationData(site: USGSGuage.Site, dataType: Int) : ComplicationData? {
+    private fun createComplicationData(age: String, temp: String, level: String, dataType: Int) : ComplicationData? {
         when (dataType) {
             ComplicationData.TYPE_LONG_TEXT -> {
-                val text = createSummaryString(site)
+                val text = String.format("%s %s at %s", level, temp, age)
                 return ComplicationData.Builder(ComplicationData.TYPE_LONG_TEXT)
                         .setLongText(ComplicationText.plainText(text))
                         .build()
@@ -106,26 +128,24 @@ class USGSStreamSummaryComplication : ComplicationProviderService() {
         return null
     }
 
-    private fun createSummaryString(site: USGSGuage.Site) : String {
-        val level = if (site.parameters.containsKey(GAUGE_LEVEL)) {
-            if (site.getValueForKey(GAUGE_LEVEL) == ERROR_VALUE) "ICE "
-            else String.format("%2.02fft ", site.getValueForKey(GAUGE_LEVEL))
-        } else if (site.parameters.containsKey(GAUGE_FLOW)) {
-                if (site.getValueForKey(GAUGE_FLOW) == ERROR_VALUE) "ICE "
-                else String.format("%d cfs ", site.getValueForKey(GAUGE_FLOW).toInt())
-        } else {
-            ""
+    /**
+     * Create the complication error data
+     */
+    private fun createComplicationErrorData(e: Exception, dataType: Int) : ComplicationData? {
+        when (dataType) {
+            ComplicationData.TYPE_LONG_TEXT -> {
+                val text = e.message
+                return ComplicationData.Builder(ComplicationData.TYPE_LONG_TEXT)
+                        .setLongText(ComplicationText.plainText(text))
+                        .build()
+            }
+            else -> if (Log.isLoggable(TAG, Log.WARN)) {
+                Log.w(TAG, "Unexpected complication type " + dataType)
+            }
         }
-
-        val temp = if (site.parameters.containsKey(GAUGE_TEMP))
-            String.format("%2.1fC ", site.getValueForKey(GAUGE_TEMP))
-        else
-            ""
-
-        val formatter = DateTimeFormat.forPattern("HH:mm")
-        val age = site.getTimeStamp().toString(formatter)
-        return String.format("%s %s at %s", level, temp, age)
+        return null
     }
+
 
     private fun getSiteId() :String {
         try {

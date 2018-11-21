@@ -33,7 +33,7 @@ class USGSStreamSummaryComplication : ComplicationProviderService() {
      */
     override fun onComplicationActivated(
             complicationId: Int, dataType: Int, complicationManager: ComplicationManager?) {
-        Log.d(TAG, "onComplicationActivated(): " + complicationId)
+        Log.d(TAG, "onComplicationActivated(): $complicationId")
         JodaTimeAndroid.init(this)
 
     }
@@ -50,7 +50,7 @@ class USGSStreamSummaryComplication : ComplicationProviderService() {
      */
     override fun onComplicationUpdate(
             complicationId: Int, dataType: Int, complicationManager: ComplicationManager) {
-        Log.d(TAG, "onComplicationUpdate() id: " + complicationId)
+        Log.d(TAG, "onComplicationUpdate() id: $complicationId")
 
         val siteData = USGSSitePrefs(this.applicationContext)
         val formatter = DateTimeFormat.forPattern("HH:mm")
@@ -73,7 +73,7 @@ class USGSStreamSummaryComplication : ComplicationProviderService() {
                 levelString = "ICE "
             }
 
-            val tempString = String.format("%2.1fC ", temp)
+            val tempString = getTempString(temp)
 
             val ageString = age.toString(formatter)
 
@@ -89,7 +89,7 @@ class USGSStreamSummaryComplication : ComplicationProviderService() {
      * Called when the complication has been deactivated.
      */
     override fun onComplicationDeactivated(complicationId: Int) {
-        Log.d(TAG, "onComplicationDeactivated(): " + complicationId)
+        Log.d(TAG, "onComplicationDeactivated(): $complicationId")
     }
 
 
@@ -122,7 +122,7 @@ class USGSStreamSummaryComplication : ComplicationProviderService() {
                         .build()
             }
             else -> if (Log.isLoggable(TAG, Log.WARN)) {
-                Log.w(TAG, "Unexpected complication type " + dataType)
+                Log.w(TAG, "Unexpected complication type $dataType")
             }
         }
         return null
@@ -140,7 +140,7 @@ class USGSStreamSummaryComplication : ComplicationProviderService() {
                         .build()
             }
             else -> if (Log.isLoggable(TAG, Log.WARN)) {
-                Log.w(TAG, "Unexpected complication type " + dataType)
+                Log.w(TAG, "Unexpected complication type $dataType")
             }
         }
         return null
@@ -158,5 +158,28 @@ class USGSStreamSummaryComplication : ComplicationProviderService() {
         }
         return getString(R.string.site_id)
     }
+
+    private fun getTempString(temp: Float): String {
+        return if (willDisplayFahrenheit()) {
+            String.format("%2.1fF ", cToF(temp))
+        } else {
+            String.format("%2.1fC ", temp)
+        }
+    }
+
+    private fun willDisplayFahrenheit() :Boolean {
+        try {
+            val file = this.applicationContext.getString(R.string.watchface_prefs)
+            val prefs = this.applicationContext.getSharedPreferences(file, 0)
+            val key = this.applicationContext.getString(R.string.fahrenheit_display_pref)
+            return prefs.getBoolean(key, false)
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception getting stuff")
+        }
+        return false
+    }
+
+    fun cToF(c: Float) = (9F/5.0F * c) + 32F
+
 }
 

@@ -16,8 +16,8 @@
   -->
 <Switch
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/unread_notification_switch"
+    android:id="@+id/fahrenheit_display_switch"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     style="@style/ButtonConfigurationStyle"
-    android:text="Notification"/>
+    android:text="Show Temp in Fahrenheit"/>

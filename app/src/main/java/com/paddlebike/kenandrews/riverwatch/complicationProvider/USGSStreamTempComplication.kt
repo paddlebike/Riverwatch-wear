@@ -9,7 +9,6 @@ import android.util.Log
 import com.paddlebike.kenandrews.riverwatch.*
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
-import org.joda.time.format.DateTimeFormat
 
 
 private const val TAG = "USGSGaugeTemp"
@@ -52,11 +51,17 @@ class USGSStreamTempComplication : ComplicationProviderService() {
             try {
                 val site = USGSSite.fetch(siteId)
                 siteData.saveSite(site)
-            }catch (e: Exception) {
+            } catch (e: Exception) {
                 Log.e(TAG, e.toString())
             }
             val gaugeValue = siteData.getGaugeFloat(siteId, GaugeConstants.GAUGE_TEMP, PrefsConstants.LAST_VAL)
-            val complicationData = createComplicationData(gaugeValue, dataType)
+
+            val complicationData = if (willDisplayFahrenheit()) {
+                createFahrenheitComplicationData(gaugeValue, dataType)
+            } else {
+                createComplicationData(gaugeValue, dataType)
+            }
+
             uiThread {
                 updateComplication(complicationData, complicationId, complicationManager)
             }
@@ -115,17 +120,59 @@ class USGSStreamTempComplication : ComplicationProviderService() {
         return null
     }
 
+    /**
+     * Create the complication data
+     */
+    private fun createFahrenheitComplicationData(gaugeValue: Float, dataType: Int) : ComplicationData? {
+        val fahrenheit = cToF(gaugeValue)
+
+        when (dataType) {
+            ComplicationData.TYPE_SHORT_TEXT -> return ComplicationData.Builder(ComplicationData.TYPE_SHORT_TEXT)
+                    .setIcon(Icon.createWithResource(this.applicationContext, R.drawable.thermometer))
+                    .setShortText(ComplicationText.plainText(String.format("%2.1f F", fahrenheit)))
+                    .build()
+            ComplicationData.TYPE_LONG_TEXT -> return ComplicationData.Builder(ComplicationData.TYPE_LONG_TEXT)
+                    .setIcon(Icon.createWithResource(this.applicationContext, R.drawable.thermometer))
+                    .setLongText(ComplicationText.plainText(String.format("Temp: %2.1fF", fahrenheit)))
+                    .build()
+            ComplicationData.TYPE_RANGED_VALUE -> return ComplicationData.Builder(ComplicationData.TYPE_RANGED_VALUE)
+                    .setIcon(Icon.createWithResource(this.applicationContext, R.drawable.thermometer))
+                    .setMinValue(32F)
+                    .setValue(gaugeValue)
+                    .setMaxValue(120F)
+                    .setShortText(ComplicationText.plainText(String.format("%2.1f F", fahrenheit)))
+                    .build()
+            else -> if (Log.isLoggable(TAG, Log.WARN)) {
+                Log.w(TAG, "Unexpected complication type " + dataType)
+            }
+        }
+        return null
+    }
+
 
     private fun getSiteId() :String {
         val defaultSiteId = this.applicationContext.getString(R.string.site_id)
         try {
             val key = this.applicationContext.getString(R.string.watchface_prefs)
             val prefs = this.applicationContext.getSharedPreferences(key, 0)
-            val stationId =  prefs.getString("saved_gauge_id", defaultSiteId)
-            return stationId
+            return prefs.getString("saved_gauge_id", defaultSiteId)
         } catch (e: Exception) {
             Log.e(TAG, "Exception getting stuff")
         }
         return defaultSiteId
     }
+
+    private fun willDisplayFahrenheit() :Boolean {
+        try {
+            val file = this.applicationContext.getString(R.string.watchface_prefs)
+            val prefs = this.applicationContext.getSharedPreferences(file, 0)
+            val key = this.applicationContext.getString(R.string.fahrenheit_display_pref)
+            return prefs.getBoolean(key, false)
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception getting stuff")
+        }
+        return false
+    }
+
+    fun cToF(c: Float) = (9F/5.0F * c) + 32F
 }

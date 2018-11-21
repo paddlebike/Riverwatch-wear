@@ -18,31 +18,32 @@
 Stacked views to create watch face preview in settings activity's recycler view for live updates
 based on changes by the user.
 -->
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="160dp">
 
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:orientation="horizontal">
 
         <RelativeLayout
-            android:paddingStart="16dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:layout_alignParentStart="true"
-            android:layout_centerVertical="true">
+            android:layout_centerVertical="true"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="40dp">
 
             <ImageView
                 android:id="@+id/left_complication_background"
                 style="?android:borderlessButtonStyle"
-                android:layout_width="@dimen/gauge_size"
-                android:layout_height="@dimen/gauge_size"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="16dp"
                 android:background="@android:color/transparent"
                 android:importantForAccessibility="no"
                 android:src="@drawable/added_complication" />
@@ -50,24 +51,25 @@ based on changes by the user.
             <ImageButton
                 android:id="@+id/left_complication"
                 style="?android:borderlessButtonStyle"
-                android:layout_width="@dimen/gauge_size"
-                android:layout_height="@dimen/gauge_size"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
-                android:background="@android:color/transparent" />
+                android:background="@android:color/transparent"
+                android:contentDescription="@string/content_description" />
         </RelativeLayout>
 
         <RelativeLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:layout_centerInParent="true"
             android:layout_centerVertical="true">
 
             <ImageView
                 android:id="@+id/center_complication_background"
                 style="?android:borderlessButtonStyle"
-                android:layout_width="@dimen/gauge_size"
-                android:layout_height="@dimen/gauge_size"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 android:background="@android:color/transparent"
                 android:importantForAccessibility="no"
                 android:src="@drawable/added_complication" />
@@ -75,23 +77,25 @@ based on changes by the user.
             <ImageButton
                 android:id="@+id/center_complication"
                 style="?android:borderlessButtonStyle"
-                android:layout_width="@dimen/gauge_size"
-                android:layout_height="@dimen/gauge_size"
-                android:background="@android:color/transparent" />
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                android:contentDescription="@string/content_description" />
         </RelativeLayout>
 
         <RelativeLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingEnd="16dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true">
+            android:layout_centerVertical="true"
+            android:layout_marginStart="40dp"
+            android:layout_marginEnd="16dp">
 
             <ImageView
                 android:id="@+id/right_complication_background"
                 style="?android:borderlessButtonStyle"
-                android:layout_width="@dimen/gauge_size"
-                android:layout_height="@dimen/gauge_size"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 android:background="@android:color/transparent"
                 android:importantForAccessibility="no"
                 android:src="@drawable/added_complication" />
@@ -99,24 +103,29 @@ based on changes by the user.
             <ImageButton
                 android:id="@+id/right_complication"
                 style="?android:borderlessButtonStyle"
-                android:layout_width="@dimen/gauge_size"
-                android:layout_height="@dimen/gauge_size"
-                android:background="@android:color/transparent" />
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                android:contentDescription="@string/content_description" />
         </RelativeLayout>
     </RelativeLayout>
 
     <RelativeLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:paddingBottom="@dimen/interactive_line_height"
-        android:layout_alignParentBottom="true">
+        android:layout_width="180dp"
+        android:layout_height="32dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginStart="40dp"
+        android:layout_marginBottom="8dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="16dp">
 
         <ImageView
             android:id="@+id/bottom_complication_background"
             style="?android:borderlessButtonStyle"
-            android:layout_width="wrap_content"
-
-            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:background="@android:color/transparent"
             android:importantForAccessibility="no"
             android:src="@drawable/added_complication" />
@@ -124,10 +133,9 @@ based on changes by the user.
         <ImageButton
             android:id="@+id/bottom_complication"
             style="?android:borderlessButtonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_centerVertical="true"
-            android:background="@android:color/holo_green_dark" />
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/holo_blue_dark"
+            android:contentDescription="@string/content_description" />
     </RelativeLayout>
 </RelativeLayout>

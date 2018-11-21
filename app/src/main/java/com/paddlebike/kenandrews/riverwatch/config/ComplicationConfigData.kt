@@ -50,12 +50,12 @@ class ComplicationConfigData {
             settingsConfigData.add(gaugeIdConfigItem)
 
             // Data for 'Unread Notifications' UX (toggle) in settings Activity.
-            val unreadNotificationsConfigItem = UnreadNotificationConfigItem(
-                    context.getString(R.string.config_unread_notifications_label),
-                    R.drawable.ic_notifications_white_24dp,
-                    R.drawable.ic_notifications_off_white_24dp,
-                    R.string.saved_unread_notifications_pref)
-            settingsConfigData.add(unreadNotificationsConfigItem)
+            val fahrenheitDisplayConfigItem = FahrenheitDisplayConfigItem(
+                    context.getString(R.string.config_display_fahrenheit_label),
+                    R.drawable.celsius_icon,
+                    R.drawable.fahrenheit_icon,
+                    R.string.fahrenheit_display_pref)
+            settingsConfigData.add(fahrenheitDisplayConfigItem)
 
 
             return settingsConfigData
@@ -94,18 +94,18 @@ class ComplicationConfigData {
     /**
      * Data for Unread Notification preference picker item in RecyclerView.
      */
-    class UnreadNotificationConfigItem internal constructor(
+    class FahrenheitDisplayConfigItem internal constructor(
             val name: String,
             val iconEnabledResourceId: Int,
             val iconDisabledResourceId: Int,
             val sharedPrefId: Int) : ConfigItemType {
 
         override val configType: Int
-            get() = ComplicationConfigRecyclerViewAdapter.TYPE_UNREAD_NOTIFICATION_CONFIG
+            get() = ComplicationConfigRecyclerViewAdapter.TYPE_FAHRENHEIT_CONFIG
 
         companion object {
             val configType: Int
-                get() = ComplicationConfigRecyclerViewAdapter.TYPE_UNREAD_NOTIFICATION_CONFIG
+                get() = ComplicationConfigRecyclerViewAdapter.TYPE_FAHRENHEIT_CONFIG
         }
     }
 

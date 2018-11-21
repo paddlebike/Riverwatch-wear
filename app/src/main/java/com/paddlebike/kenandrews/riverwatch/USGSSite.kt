@@ -33,7 +33,7 @@ class USGSSite {
 
     companion object {
         fun fetchToString(siteId: String) : String {
-            Log.d(TAG, "Fetching the gauge data for: " + siteId)
+            Log.d(TAG, "Fetching the gauge data for: $siteId")
             val response = URL("https://waterservices.usgs.gov/nwis/iv/?&period=P1D&format=json&parameterCd=00065,00060,00010&sites=$siteId").openStream()
             val klx = Parser().parse(response) as? JsonObject ?:
             throw ExceptionInInitializerError("No response data")
@@ -47,30 +47,35 @@ class USGSSite {
             val value = klx.getValue("value") as? JsonObject ?:
             throw ExceptionInInitializerError("No value in response data")
 
-            val ts = value.getValue("timeSeries") as? JsonArray<JsonObject> ?:
+            val ts = value.getValue("timeSeries") as? JsonArray<*> ?:  // JsonArray<JsonObject>
             throw ExceptionInInitializerError("No time series in response data")
 
 
             val parameters: HashMap<String, GaugeParameter> = hashMapOf()
-            val sourceInfo = ts[0].getValue("sourceInfo") as? JsonObject ?:
+
+            val tsVal = ts[0] as JsonObject
+            val sourceInfo = tsVal.getValue("sourceInfo") as? JsonObject ?:
             throw ExceptionInInitializerError("No time sourceInfo in response data")
 
             val siteName = sourceInfo.getValue("siteName") as? String ?:
             throw ExceptionInInitializerError("No siteName series in response data")
 
-            val name: String = ts[0].getValue("name") as String
+            val name: String = tsVal.getValue("name") as String
             val site = name.split(":")[1]
 
-            for (item in ts) {
+            for (i in ts ) {
+                val item = i as JsonObject
                 val gaugeName: String = item.getValue("name") as String
                 val variableCode = gaugeName.split(":")[2]
 
 
-                val valuesArray = item.getValue("values") as? JsonArray<JsonObject> ?:
+                val valuesArray = item.getValue("values") as? JsonArray<*> ?:
                 throw ExceptionInInitializerError("No values in response data")
 
-                val myValue = valuesArray[0].getValue("value") as JsonArray<JsonObject>
-                val last = myValue.last()
+                val firstValue = valuesArray[0] as JsonObject
+
+                val myValue = firstValue.getValue("value") as JsonArray<*>
+                val last = myValue.last() as JsonObject
                 val reading = last.getValue("value") as String
                 val time = last.getValue("dateTime") as String
 
@@ -84,7 +89,7 @@ class USGSSite {
         }
 
         fun fetch(siteId: String): Site {
-            Log.d(TAG, "Fetching the gauge data for: " + siteId)
+            Log.d(TAG, "Fetching the gauge data for: $siteId")
             val response = URL("https://waterservices.usgs.gov/nwis/iv/?&period=P1D&format=json&parameterCd=00065,00060,00010&sites=$siteId").openStream()
             Log.d(TAG, "Got response: " + response.toString())
 
@@ -113,17 +118,18 @@ class USGSSite {
                 val variableCode = gaugeName.split(":")[2]
 
 
-                val valuesArray = item.getValue("values") as? JsonArray<JsonObject> ?:
+                val valuesArray = item.getValue("values") as? JsonArray<*> ?:
                         throw ExceptionInInitializerError("No values in response data")
+                val firstValue = valuesArray[0] as JsonObject
 
-                val myValue = valuesArray[0].getValue("value") as JsonArray<JsonObject>
-                val last = myValue.last()
+                val myValue = firstValue.getValue("value") as JsonArray<*>
+
+                val last = myValue.last() as JsonObject
                 val reading = last.getValue("value") as String
                 val time = last.getValue("dateTime") as String
-
                 val param = GaugeParameter(reading.toFloat(), time)
-
                 parameters[variableCode] = param
+
 
             }
 
@@ -133,47 +139,34 @@ class USGSSite {
 
 
 
-    class Site(val siteId: String, val name: String,val parameters: HashMap<String,GaugeParameter>) {
-        override fun toString(): String {
-            return String.format("Site: %s Name: %s\n%s", siteId, name, showParameters())
-        }
-
-
-        fun showParameters(): String {
-            var outString = ""
-            for (item in parameters) {
-                outString += String.format("    %s : %s\n", item.key, item.value.toString())
-            }
-            return outString
-        }
-
+    data class Site(val siteId: String, val name: String,val parameters: HashMap<String,GaugeParameter>) {
 
         fun getValueForKey(key: String): Float {
             return  parameters[key]?.value ?: 0.0F
         }
 
         fun getAge(): Long {
-            when {
-                parameters.containsKey(GAUGE_LEVEL) -> return parameters[GAUGE_LEVEL]!!.getAge()
-                parameters.containsKey(GAUGE_FLOW) -> return parameters[GAUGE_LEVEL]!!.getAge()
-                parameters.containsKey(GAUGE_TEMP) -> return parameters[GAUGE_LEVEL]!!.getAge()
-                else -> return -1
+            return when {
+                parameters.containsKey(GAUGE_LEVEL) -> parameters[GAUGE_LEVEL]!!.getAge()
+                parameters.containsKey(GAUGE_FLOW) -> parameters[GAUGE_LEVEL]!!.getAge()
+                parameters.containsKey(GAUGE_TEMP) -> parameters[GAUGE_LEVEL]!!.getAge()
+                else -> -1
             }
         }
 
         fun getTimeStamp() : DateTime {
-            when {
-                parameters.containsKey(GAUGE_LEVEL) -> return parameters[GAUGE_LEVEL]!!.getTimeStamp()
-                parameters.containsKey(GAUGE_FLOW) -> return parameters[GAUGE_LEVEL]!!.getTimeStamp()
-                parameters.containsKey(GAUGE_TEMP) -> return parameters[GAUGE_LEVEL]!!.getTimeStamp()
-                else -> return DateTime(-1)
+            return when {
+                parameters.containsKey(GAUGE_LEVEL) -> parameters[GAUGE_LEVEL]!!.getTimeStamp()
+                parameters.containsKey(GAUGE_FLOW) -> parameters[GAUGE_LEVEL]!!.getTimeStamp()
+                parameters.containsKey(GAUGE_TEMP) -> parameters[GAUGE_LEVEL]!!.getTimeStamp()
+                else -> DateTime(-1)
             }
         }
 
     }
 
 
-    class GaugeParameter (val value: Float, val date: String) {
+    data class GaugeParameter (val value: Float, val date: String) {
         override fun toString(): String {
             return String.format("Last value: %f %d minutes ago", value, getAge()/(1000*60))
         }

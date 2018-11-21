@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.paddlebike.kenandrews.riverwatch">
 
     <uses-feature android:name="android.hardware.type.watch" />
@@ -15,7 +16,8 @@
         android:icon="@drawable/round_landmark_icon_river"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.DeviceDefault">
+        android:theme="@android:style/Theme.DeviceDefault"
+        tools:ignore="GoogleAppIndexingWarning">
         <meta-data
             android:name="com.google.android.wearable.standalone"
             android:value="true" />
@@ -129,7 +131,7 @@
 
             <meta-data
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
-                android:value="90"/>
+                android:value="900"/>
         </service>
 
         <meta-data

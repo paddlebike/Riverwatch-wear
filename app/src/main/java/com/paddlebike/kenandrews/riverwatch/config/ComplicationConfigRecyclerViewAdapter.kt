@@ -24,6 +24,9 @@ import android.view.inputmethod.EditorInfo
 import android.widget.*
 import com.paddlebike.kenandrews.riverwatch.R
 import com.paddlebike.kenandrews.riverwatch.RiverWatchFace
+import kotlinx.android.synthetic.main.config_list_gauge_id.view.*
+import kotlinx.android.synthetic.main.config_list_more_options_item.view.*
+import kotlinx.android.synthetic.main.config_list_preview_and_complications_item.view.*
 
 
 import java.util.ArrayList
@@ -85,7 +88,7 @@ class ComplicationConfigRecyclerViewAdapter(
     private var mPreviewAndComplicationsViewHolder: PreviewAndComplicationsViewHolder? = null
 
     /**
-     * Used by associated watch face ([ComplicationWatchFaceService]) to let this
+     * Used by associated watch face to let this
      * adapter know which complication locations are supported, their ids, and supported
      * complication data types.
      */
@@ -115,48 +118,50 @@ class ComplicationConfigRecyclerViewAdapter(
         mProviderInfoRetriever.init()
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder? {
-        Log.d(TAG, "onCreateViewHolder(): viewType: " + viewType)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        Log.d(TAG, "onCreateViewHolder(): viewType: $viewType")
 
-        var viewHolder: RecyclerView.ViewHolder? = null
 
-        when (viewType) {
+        return when (viewType) {
             TYPE_PREVIEW_AND_COMPLICATIONS_CONFIG -> {
                 // Need direct reference to watch face preview view holder to update watch face
                 // preview based on selections from the user.
-                mPreviewAndComplicationsViewHolder = PreviewAndComplicationsViewHolder(
+                PreviewAndComplicationsViewHolder(
                         LayoutInflater.from(parent.context)
                                 .inflate(
                                         R.layout.config_list_preview_and_complications_item,
                                         parent,
                                         false))
-                viewHolder = mPreviewAndComplicationsViewHolder
             }
 
-            TYPE_MORE_OPTIONS -> viewHolder = MoreOptionsViewHolder(
+            TYPE_MORE_OPTIONS -> MoreOptionsViewHolder(
                     LayoutInflater.from(parent.context)
                             .inflate(
                                     R.layout.config_list_more_options_item,
                                     parent,
                                     false))
 
-            TYPE_GAUGE_ID_CONFIG -> viewHolder = GaugeIdViewHolder(
+            TYPE_GAUGE_ID_CONFIG ->  GaugeIdViewHolder(
                     LayoutInflater.from(parent.context)
                             .inflate(
                                     R.layout.config_list_gauge_id,
                                     parent,
                                     false))
 
-            TYPE_UNREAD_NOTIFICATION_CONFIG -> viewHolder = UnreadNotificationViewHolder(
+            TYPE_FAHRENHEIT_CONFIG ->  FahrenheitDisplayViewHolder(
                     LayoutInflater.from(parent.context)
                             .inflate(
-                                    R.layout.config_list_unread_notif_item,
+                                    R.layout.config_list_fahrenheit,
                                     parent,
                                     false))
-
+            else -> MoreOptionsViewHolder(
+                    LayoutInflater.from(parent.context)
+                            .inflate(
+                                    R.layout.config_list_more_options_item,
+                                    parent,
+                                    false))
         }
 
-        return viewHolder
     }
 
     override fun onBindViewHolder(viewHolder: RecyclerView.ViewHolder, position: Int) {
@@ -193,21 +198,21 @@ class ComplicationConfigRecyclerViewAdapter(
             }
 
 
-            TYPE_UNREAD_NOTIFICATION_CONFIG -> {
-                val unreadViewHolder = viewHolder as UnreadNotificationViewHolder
+            TYPE_FAHRENHEIT_CONFIG -> {
+                val fahrenheitViewHolder = viewHolder as FahrenheitDisplayViewHolder
 
-                val unreadConfigItem = configItemType as ComplicationConfigData.UnreadNotificationConfigItem
+                val fahrenheitConfigItem = configItemType as ComplicationConfigData.FahrenheitDisplayConfigItem
 
-                val unreadEnabledIconResourceId = unreadConfigItem.iconEnabledResourceId
-                val unreadDisabledIconResourceId = unreadConfigItem.iconDisabledResourceId
+                val fahrenheitEnabledIconResourceId = fahrenheitConfigItem.iconEnabledResourceId
+                val fahrenheitDisabledIconResourceId = fahrenheitConfigItem.iconDisabledResourceId
 
-                val unreadName = unreadConfigItem.name
-                val unreadSharedPrefId = unreadConfigItem.sharedPrefId
+                val unreadName = fahrenheitConfigItem.name
+                val unreadSharedPrefId = fahrenheitConfigItem.sharedPrefId
 
-                unreadViewHolder.setIcons(
-                        unreadEnabledIconResourceId, unreadDisabledIconResourceId)
-                unreadViewHolder.setName(unreadName)
-                unreadViewHolder.setSharedPrefId(unreadSharedPrefId)
+                fahrenheitViewHolder.setIcons(
+                        fahrenheitDisabledIconResourceId, fahrenheitEnabledIconResourceId)
+                fahrenheitViewHolder.setName(unreadName)
+                fahrenheitViewHolder.setSharedPrefId(unreadSharedPrefId)
             }
 
 
@@ -226,16 +231,16 @@ class ComplicationConfigRecyclerViewAdapter(
     /** Updates the selected complication id saved earlier with the new information.  */
     fun updateSelectedComplication(complicationProviderInfo: ComplicationProviderInfo) {
 
-        Log.d(TAG, "updateSelectedComplication: " + mPreviewAndComplicationsViewHolder!!)
+        Log.d(TAG, "updateSelectedComplication: ")
 
         // Checks if view is inflated and complication id is valid.
-        if (mPreviewAndComplicationsViewHolder != null && mSelectedComplicationId >= 0) {
-            mPreviewAndComplicationsViewHolder!!.updateComplicationViews(
+        if (mSelectedComplicationId >= 0) {
+            mPreviewAndComplicationsViewHolder?.updateComplicationViews(
                     mSelectedComplicationId, complicationProviderInfo)
         }
     }
 
-    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView?) {
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         super.onDetachedFromRecyclerView(recyclerView)
         // Required to release retriever for active complication data on detach.
         mProviderInfoRetriever.release()
@@ -248,29 +253,21 @@ class ComplicationConfigRecyclerViewAdapter(
      */
     inner class PreviewAndComplicationsViewHolder(view: View) : RecyclerView.ViewHolder(view), OnClickListener {
 
-        private val mLeftComplicationBackground: ImageView =
-                view.findViewById(R.id.left_complication_background) as ImageView
+        private val mLeftComplicationBackground = view.left_complication_background
 
-        private val mCenterComplicationBackground: ImageView =
-                view.findViewById(R.id.center_complication_background) as ImageView
+        private val mCenterComplicationBackground = view.center_complication_background
 
-        private val mRightComplicationBackground: ImageView =
-                view.findViewById(R.id.right_complication_background) as ImageView
+        private val mRightComplicationBackground: ImageView = view.right_complication_background
 
-        private val mBottomComplicationBackground: ImageView =
-                view.findViewById(R.id.bottom_complication_background) as ImageView
+        private val mBottomComplicationBackground = view.bottom_complication_background
 
-        private val mLeftComplication: ImageButton =
-                view.findViewById(R.id.left_complication) as ImageButton
+        private val mLeftComplication = view.left_complication
 
-        private val mCenterComplication: ImageButton =
-                view.findViewById(R.id.center_complication) as ImageButton
+        private val mCenterComplication = view.center_complication
 
-        private val mRightComplication: ImageButton =
-                view.findViewById(R.id.right_complication) as ImageButton
+        private val mRightComplication = view.right_complication
 
-        private val mBottomComplication: ImageButton =
-                view.findViewById(R.id.bottom_complication) as ImageButton
+        private val mBottomComplication = view.bottom_complication
 
 
         private var mDefaultComplicationDrawable: Drawable? = null
@@ -286,25 +283,30 @@ class ComplicationConfigRecyclerViewAdapter(
         }
 
         override fun onClick(view: View) {
-            if (view == mLeftComplication) {
-                Log.d(TAG, "Left Complication click()")
-                val currentActivity = view.context as Activity
-                launchComplicationHelperActivity(currentActivity, ComplicationLocation.LEFT)
+            when (view) {
+                mLeftComplication -> {
+                    Log.d(TAG, "Left Complication click()")
+                    val currentActivity = view.context as Activity
+                    launchComplicationHelperActivity(currentActivity, ComplicationLocation.LEFT)
 
-            } else if (view == mCenterComplication) {
-                Log.d(TAG, "Center Complication click()")
-                val currentActivity = view.context as Activity
-                launchComplicationHelperActivity(currentActivity, ComplicationLocation.CENTER)
+                }
+                mCenterComplication -> {
+                    Log.d(TAG, "Center Complication click()")
+                    val currentActivity = view.context as Activity
+                    launchComplicationHelperActivity(currentActivity, ComplicationLocation.CENTER)
 
-            } else if (view == mRightComplication) {
-                Log.d(TAG, "Right Complication click()")
-                val currentActivity = view.context as Activity
-                launchComplicationHelperActivity(currentActivity, ComplicationLocation.RIGHT)
+                }
+                mRightComplication -> {
+                    Log.d(TAG, "Right Complication click()")
+                    val currentActivity = view.context as Activity
+                    launchComplicationHelperActivity(currentActivity, ComplicationLocation.RIGHT)
 
-            } else if (view == mBottomComplication) {
-                Log.d(TAG, "Bottom Complication click()")
-                val currentActivity = view.context as Activity
-                launchComplicationHelperActivity(currentActivity, ComplicationLocation.BOTTOM)
+                }
+                mBottomComplication -> {
+                    Log.d(TAG, "Bottom Complication click()")
+                    val currentActivity = view.context as Activity
+                    launchComplicationHelperActivity(currentActivity, ComplicationLocation.BOTTOM)
+                }
             }
         }
 
@@ -356,7 +358,7 @@ class ComplicationConfigRecyclerViewAdapter(
 
         fun updateComplicationViews(
                 watchFaceComplicationId: Int, complicationProviderInfo: ComplicationProviderInfo?) {
-            Log.d(TAG, "updateComplicationViews(): id: " + watchFaceComplicationId)
+            Log.d(TAG, "updateComplicationViews(): id: $watchFaceComplicationId")
             Log.d(TAG, "\tinfo: " + complicationProviderInfo!!)
 
             when (watchFaceComplicationId) {
@@ -385,7 +387,7 @@ class ComplicationConfigRecyclerViewAdapter(
             } else {
                 button.setImageDrawable(mDefaultComplicationDrawable)
                 button.contentDescription = mContext.getString(R.string.add_complication)
-                background.visibility = View.INVISIBLE
+                background.visibility = View.VISIBLE
             }
         }
 
@@ -414,11 +416,7 @@ class ComplicationConfigRecyclerViewAdapter(
     /** Displays icon to indicate there are more options below the fold.  */
     inner class MoreOptionsViewHolder(view: View) : RecyclerView.ViewHolder(view) {
 
-        private val mMoreOptionsImageView: ImageView
-
-        init {
-            mMoreOptionsImageView = view.findViewById(R.id.more_options_image_view) as ImageView
-        }
+        private val mMoreOptionsImageView = view.more_options_image_view
 
         fun setIcon(resourceId: Int) {
             val context = mMoreOptionsImageView.context
@@ -430,23 +428,24 @@ class ComplicationConfigRecyclerViewAdapter(
     /** Numeric text box for entering the gauge ID.  */
     inner class GaugeIdViewHolder(view: View) : RecyclerView.ViewHolder(view), TextView.OnEditorActionListener  {
 
-        private var mGaugeIdTextView: TextView? = view.findViewById(R.id.stationIdEditBox) as TextView
+        private var mGaugeIdTextView = view.stationIdEditBox
 
         init {
-            mGaugeIdTextView!!.setOnEditorActionListener(this)
+            mGaugeIdTextView.setOnEditorActionListener(this)
         }
 
         fun setDefault(resourceId: Int) {
             Log.d(TAG, "Setting the default gauge ID")
-            val context = mGaugeIdTextView!!.context
+            val context = mGaugeIdTextView.context
             val defaultSite = context.getString(resourceId)
-            mGaugeIdTextView!!.text = mSharedPref.getString("saved_gauge_id", defaultSite)
+            val editable = mSharedPref.getString("saved_gauge_id", defaultSite)
+            mGaugeIdTextView.setText(editable)
 
         }
 
         override fun onEditorAction(textView: TextView?, actionId: Int, p2: KeyEvent?): Boolean {
             if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                val newSite = mGaugeIdTextView!!.text.toString()
+                val newSite = mGaugeIdTextView.text.toString()
                 Log.v("New site ID", newSite)
 
                 val editor = mSharedPref.edit()
@@ -463,9 +462,9 @@ class ComplicationConfigRecyclerViewAdapter(
      * Displays switch to indicate whether or not icon appears for unread notifications. User can
      * toggle on/off.
      */
-    inner class UnreadNotificationViewHolder(view: View) : RecyclerView.ViewHolder(view), OnClickListener {
+    inner class FahrenheitDisplayViewHolder(view: View) : RecyclerView.ViewHolder(view), OnClickListener {
 
-        private val mUnreadNotificationSwitch: Switch?
+        private val mFahrenheitSwitch: Switch?
 
         private var mEnabledIconResourceId: Int = 0
         private var mDisabledIconResourceId: Int = 0
@@ -474,12 +473,12 @@ class ComplicationConfigRecyclerViewAdapter(
 
         init {
 
-            mUnreadNotificationSwitch = view.findViewById(R.id.unread_notification_switch) as Switch
+            mFahrenheitSwitch = view.findViewById(R.id.fahrenheit_display_switch) as Switch
             view.setOnClickListener(this)
         }
 
         fun setName(name: String) {
-            mUnreadNotificationSwitch!!.text = name
+            mFahrenheitSwitch!!.text = name
         }
 
         fun setIcons(enabledIconResourceId: Int, disabledIconResourceId: Int) {
@@ -487,19 +486,19 @@ class ComplicationConfigRecyclerViewAdapter(
             mEnabledIconResourceId = enabledIconResourceId
             mDisabledIconResourceId = disabledIconResourceId
 
-            val context = mUnreadNotificationSwitch!!.context
+            val context = mFahrenheitSwitch!!.context
 
             // Set default to enabled.
-            mUnreadNotificationSwitch.setCompoundDrawablesWithIntrinsicBounds(
+            mFahrenheitSwitch.setCompoundDrawablesWithIntrinsicBounds(
                     context.getDrawable(mEnabledIconResourceId), null, null, null)
         }
 
         fun setSharedPrefId(sharedPrefId: Int) {
             mSharedPrefResourceId = sharedPrefId
 
-            if (mUnreadNotificationSwitch != null) {
+            if (mFahrenheitSwitch != null) {
 
-                val context = mUnreadNotificationSwitch.context
+                val context = mFahrenheitSwitch.context
                 val sharedPreferenceString = context.getString(mSharedPrefResourceId)
                 val currentState = mSharedPref.getBoolean(sharedPreferenceString, true)
 
@@ -516,14 +515,14 @@ class ComplicationConfigRecyclerViewAdapter(
                 currentIconResourceId = mDisabledIconResourceId
             }
 
-            mUnreadNotificationSwitch!!.isChecked = currentState
-            mUnreadNotificationSwitch.setCompoundDrawablesWithIntrinsicBounds(
+            this.mFahrenheitSwitch!!.isChecked = currentState
+            this.mFahrenheitSwitch.setCompoundDrawablesWithIntrinsicBounds(
                     context.getDrawable(currentIconResourceId), null, null, null)
         }
 
         override fun onClick(view: View) {
             val position = adapterPosition
-            Log.d(TAG, "Complication onClick() position: " + position)
+            Log.d(TAG, "Complication onClick() position: $position")
 
             val context = view.context
             val sharedPreferenceString = context.getString(mSharedPrefResourceId)
@@ -547,6 +546,6 @@ class ComplicationConfigRecyclerViewAdapter(
         const val TYPE_PREVIEW_AND_COMPLICATIONS_CONFIG = 0
         const val TYPE_MORE_OPTIONS = 1
         const val TYPE_GAUGE_ID_CONFIG = 2
-        const val TYPE_UNREAD_NOTIFICATION_CONFIG = 3
+        const val TYPE_FAHRENHEIT_CONFIG = 3
     }
 }

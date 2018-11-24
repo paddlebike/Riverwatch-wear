@@ -38,6 +38,15 @@
             <meta-data
                 android:name="com.google.android.wearable.watchface.wearableConfigurationAction"
                 android:value="CONFIG_COMPLICATION_SIMPLE"/>
+            <meta-data
+                android:name="android.support.wearable.complications.SAFE_WATCH_FACES"
+                android:value=
+                    "com.paddlebike.kenandrews.riverwatch.complicationProvider.USGSStreamLevelComplication,
+                    com.paddlebike.kenandrews.riverwatch.complicationProvider,
+                    com.paddlebike.kenandrews.riverwatch,
+                    com.paddlebike.kenandrews"
+            />
+
             <intent-filter>
                 <action android:name="android.service.wallpaper.WallpaperService" />
 
@@ -75,8 +84,8 @@
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
                 android:value="900"/>
             <meta-data
-                android:name="METADATA_KEY_SAFE_WATCH_FACES"
-                android:value="@string/my_digital_name"/>
+                android:name="android.support.wearable.complications.SAFE_WATCH_FACES"
+                android:value="com.paddlebike.kenandrews.riverwatch"/>
         </service>
 
         <service
@@ -95,6 +104,10 @@
             <meta-data
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
                 android:value="910"/>
+
+            <meta-data
+                android:name="android.support.wearable.complications.SAFE_WATCH_FACES"
+                android:value="com.paddlebike.kenandrews.riverwatch"/>
         </service>
 
         <service
@@ -113,6 +126,10 @@
             <meta-data
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
                 android:value="875"/>
+
+            <meta-data
+                android:name="android.support.wearable.complications.SAFE_WATCH_FACES"
+                android:value="com.paddlebike.kenandrews.riverwatch"/>
         </service>
 
 
@@ -132,6 +149,10 @@
             <meta-data
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
                 android:value="900"/>
+
+            <meta-data
+                android:name="android.support.wearable.complications.SAFE_WATCH_FACES"
+                android:value="com.paddlebike.kenandrews.riverwatch"/>
         </service>
 
         <meta-data

@@ -25,11 +25,18 @@ import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import java.lang.ref.WeakReference
 import java.util.*
+import android.support.wearable.complications.ComplicationHelperActivity
+import android.content.Intent
+import android.content.ComponentName
+import android.app.PendingIntent
+import android.support.wearable.complications.ComplicationData.TYPE_LONG_TEXT
+import com.paddlebike.kenandrews.riverwatch.complicationProvider.ComplicationSiteModel
+import com.paddlebike.kenandrews.riverwatch.complicationProvider.USGSStreamLevelComplication
+import com.paddlebike.kenandrews.riverwatch.complicationProvider.USGSStreamSummaryComplication
 
 
 /**
- * Digital watch face with seconds. In ambient mode, the seconds aren't displayed. On devices with
- * low-bit ambient mode, the text is drawn without anti-aliasing in ambient mode.
+ * Digital watch face
  *
  *
  * Important Note: Because watch face apps do not have a default Activity in
@@ -233,8 +240,8 @@ class RiverWatchFace : CanvasWatchFaceService() {
         private fun initializeComplications() {
             Log.d(TAG, "initializeComplications()")
 
-            val riverLevelProvider = ComponentName("", ".complicationProvider.USGSStreamLevelComplication")
-            val riverSummaryProvider = ComponentName(applicationContext, ".complicationProvider.USGSStreamSummaryComplication")
+            val riverLevelProvider = ComponentName(applicationContext, USGSStreamLevelComplication::class.java)
+            val riverSummaryProvider = ComponentName(applicationContext, USGSStreamSummaryComplication::class.java)
 
 
             val left = ComplicationDrawable(applicationContext)
@@ -245,7 +252,7 @@ class RiverWatchFace : CanvasWatchFaceService() {
             setDefaultComplicationProvider(LEFT_COMPLICATION_ID, riverLevelProvider, TYPE_SHORT_TEXT)
             setDefaultSystemComplicationProvider(CENTER_COMPLICATION_ID, DATE, TYPE_SHORT_TEXT)
             setDefaultSystemComplicationProvider(RIGHT_COMPLICATION_ID, WATCH_BATTERY, TYPE_SHORT_TEXT)
-            setDefaultComplicationProvider(BOTTOM_COMPLICATION_ID, riverSummaryProvider, TYPE_SHORT_TEXT)
+            setDefaultComplicationProvider(BOTTOM_COMPLICATION_ID, riverSummaryProvider, TYPE_LONG_TEXT)
 
 
             // Adds new complications to a SparseArray to simplify setting styles and ambient
@@ -333,6 +340,38 @@ class RiverWatchFace : CanvasWatchFaceService() {
             updateTimer()
         }
 
+        /*
+         * Determines if tap inside a complication area or returns -1.
+         */
+        private fun getTappedComplicationId(x: Int, y: Int): Int {
+            var complicationData: ComplicationData?
+            var complicationDrawable: ComplicationDrawable
+
+            val currentTimeMillis = System.currentTimeMillis()
+
+            for (complicationId in COMPLICATION_IDS) {
+                complicationData = mComplicationDataArray.get(complicationId)
+
+                if (complicationData != null
+                        && complicationData.isActive(currentTimeMillis)
+                        && complicationData.type != ComplicationData.TYPE_NOT_CONFIGURED
+                        && complicationData.type != ComplicationData.TYPE_EMPTY) {
+
+                    complicationDrawable = mComplicationDrawableArray.get(complicationId)
+                    val complicationBoundingRect = complicationDrawable.bounds
+
+                    if (complicationBoundingRect.width() > 0) {
+                        if (complicationBoundingRect.contains(x, y)) {
+                            return complicationId
+                        }
+                    } else {
+                        Log.e(TAG, "Not a recognized complication id.")
+                    }
+                }
+            }
+            return -1
+        }
+
         /**
          * Captures tap event (and tap type)
          */
@@ -345,11 +384,44 @@ class RiverWatchFace : CanvasWatchFaceService() {
                     // The user has started a different gesture or otherwise cancelled the tap.
                 }
                 WatchFaceService.TAP_TYPE_TAP -> {
-                    // The user has completed the tap gesture.
-                    //Toast.makeText(applicationContext, getText(R.string.getting_update), Toast.LENGTH_SHORT).show()
+                    val tappedComplicationId = getTappedComplicationId(x, y)
+                    if (tappedComplicationId != -1) {
+                        onComplicationTap(tappedComplicationId)
+                    }
                 }
             }
             invalidate()
+        }
+
+        private fun onComplicationTap(complicationId: Int) {
+            Log.d(TAG, "onComplicationTap()")
+
+            val complicationData = mComplicationDataArray.get(complicationId)
+
+            if (complicationData != null) {
+
+                if (complicationData.tapAction != null) {
+                    try {
+                        complicationData.tapAction.send()
+                    } catch (e: PendingIntent.CanceledException) {
+                        Log.e(TAG, "onComplicationTap() tap action error: $e")
+                    }
+
+                } else if (complicationData.type == ComplicationData.TYPE_NO_PERMISSION) {
+
+                    // Watch face does not have permission to receive complication data, so launch
+                    // permission request.
+                    val componentName = ComponentName(applicationContext, ComplicationSiteModel::class.java)
+
+                    val permissionRequestIntent = ComplicationHelperActivity.createPermissionRequestHelperIntent(
+                            applicationContext, componentName)
+
+                    startActivity(permissionRequestIntent)
+                }
+
+            } else {
+                Log.d(TAG, "No PendingIntent for complication $complicationId.")
+            }
         }
 
 
@@ -514,4 +586,6 @@ class RiverWatchFace : CanvasWatchFaceService() {
             }
         }
     }
+
+
 }

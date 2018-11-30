@@ -1,9 +1,7 @@
 package com.paddlebike.kenandrews.riverwatch.config
 
-import android.content.Context
 import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.RecyclerView.ViewHolder
-import com.paddlebike.kenandrews.riverwatch.R
 import com.paddlebike.kenandrews.riverwatch.RiverWatchFace
 import java.util.ArrayList
 
@@ -21,7 +19,6 @@ class ComplicationConfigData {
         val watchFaceServiceClass: Class<*>
             get() = RiverWatchFace::class.java
 
-
         /**
          * Interface all ConfigItems must implement so the [RecyclerView]'s Adapter associated
          * with the configuration activity knows what type of ViewHolder to inflate.
@@ -34,29 +31,16 @@ class ComplicationConfigData {
          * Includes all data to populate each of the 5 different custom
          * [ViewHolder] types in [ComplicationConfigRecyclerViewAdapter].
          */
-        fun getDataToPopulateAdapter(context: Context): ArrayList<ConfigItemType> {
+        fun getDataToPopulateAdapter(): ArrayList<ConfigItemType> {
 
             val settingsConfigData = ArrayList<ConfigItemType>()
 
             // Data for watch face preview and complications UX in settings Activity.
-            val complicationConfigItem = PreviewAndComplicationsConfigItem(R.drawable.add_complication)
+            val complicationConfigItem = PreviewAndComplicationsConfigItem()
             settingsConfigData.add(complicationConfigItem)
 
-            // Data for "more options" UX in settings Activity.
-            val moreOptionsConfigItem = MoreOptionsConfigItem(R.drawable.ic_expand_more_white_18dp)
-            settingsConfigData.add(moreOptionsConfigItem)
-
-            val gaugeIdConfigItem = GaugeIdConfigItem(R.string.site_id)
+            val gaugeIdConfigItem = GaugeIdConfigItem()
             settingsConfigData.add(gaugeIdConfigItem)
-
-            // Data for 'Unread Notifications' UX (toggle) in settings Activity.
-            val fahrenheitDisplayConfigItem = FahrenheitDisplayConfigItem(
-                    context.getString(R.string.config_display_fahrenheit_label),
-                    R.drawable.celsius_icon,
-                    R.drawable.fahrenheit_icon,
-                    R.string.fahrenheit_display_pref)
-            settingsConfigData.add(fahrenheitDisplayConfigItem)
-
 
             return settingsConfigData
         }
@@ -65,58 +49,15 @@ class ComplicationConfigData {
     /**
      * Data for Watch Face Preview with Complications Preview item in RecyclerView.
      */
-    class PreviewAndComplicationsConfigItem internal constructor(val defaultComplicationResourceId: Int) : ConfigItemType {
-
-
+    class PreviewAndComplicationsConfigItem internal constructor() : ConfigItemType {
         override val configType: Int
             get() = ComplicationConfigRecyclerViewAdapter.TYPE_PREVIEW_AND_COMPLICATIONS_CONFIG
-
-        companion object {
-            val configType: Int
-                get() = ComplicationConfigRecyclerViewAdapter.TYPE_PREVIEW_AND_COMPLICATIONS_CONFIG
-        }
     }
 
-    /**
-     * Data for "more options" item in RecyclerView.
-     */
-    class MoreOptionsConfigItem internal constructor(val iconResourceId: Int) : ConfigItemType {
 
-        override val configType: Int
-            get() = ComplicationConfigRecyclerViewAdapter.TYPE_MORE_OPTIONS
-
-        companion object {
-            val configType: Int
-                get() = ComplicationConfigRecyclerViewAdapter.TYPE_MORE_OPTIONS
-        }
-    }
-
-    /**
-     * Data for Unread Notification preference picker item in RecyclerView.
-     */
-    class FahrenheitDisplayConfigItem internal constructor(
-            val name: String,
-            val iconEnabledResourceId: Int,
-            val iconDisabledResourceId: Int,
-            val sharedPrefId: Int) : ConfigItemType {
-
-        override val configType: Int
-            get() = ComplicationConfigRecyclerViewAdapter.TYPE_FAHRENHEIT_CONFIG
-
-        companion object {
-            val configType: Int
-                get() = ComplicationConfigRecyclerViewAdapter.TYPE_FAHRENHEIT_CONFIG
-        }
-    }
-
-    class GaugeIdConfigItem internal constructor(val defaultGaugeId: Int) : ConfigItemType {
+    class GaugeIdConfigItem internal constructor() : ConfigItemType {
         override val configType: Int
             get() = ComplicationConfigRecyclerViewAdapter.TYPE_GAUGE_ID_CONFIG
-
-        companion object {
-            val configType: Int
-                get() = ComplicationConfigRecyclerViewAdapter.TYPE_GAUGE_ID_CONFIG
-        }
     }
 
 }

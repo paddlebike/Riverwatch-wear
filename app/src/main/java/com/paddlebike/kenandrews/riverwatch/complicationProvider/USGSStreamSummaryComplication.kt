@@ -6,7 +6,6 @@ import android.support.wearable.complications.ComplicationProviderService
 import android.support.wearable.complications.ComplicationText
 import android.util.Log
 import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.ERROR_VALUE
-import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.GAUGE_FLOW
 import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.GAUGE_LEVEL
 import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.GAUGE_TEMP
 import com.paddlebike.kenandrews.riverwatch.PrefsConstants
@@ -14,6 +13,7 @@ import com.paddlebike.kenandrews.riverwatch.R
 import com.paddlebike.kenandrews.riverwatch.USGSSite
 import com.paddlebike.kenandrews.riverwatch.USGSSitePrefs
 import net.danlew.android.joda.JodaTimeAndroid
+import org.jetbrains.anko.defaultSharedPreferences
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 import org.joda.time.format.DateTimeFormat
@@ -55,7 +55,9 @@ class USGSStreamSummaryComplication : ComplicationProviderService() {
         val siteData = USGSSitePrefs(this.applicationContext)
         val formatter = DateTimeFormat.forPattern("HH:mm")
         var complicationData: ComplicationData?
-        val siteId = getSiteId()
+        val siteId = defaultSharedPreferences.getString(
+                this.applicationContext.getString(R.string.prefs_site_id),
+                this.applicationContext.getString(R.string.site_id))
 
         doAsync {
             try {
@@ -128,36 +130,6 @@ class USGSStreamSummaryComplication : ComplicationProviderService() {
         return null
     }
 
-    /**
-     * Create the complication error data
-     */
-    private fun createComplicationErrorData(e: Exception, dataType: Int) : ComplicationData? {
-        when (dataType) {
-            ComplicationData.TYPE_LONG_TEXT -> {
-                val text = e.message
-                return ComplicationData.Builder(ComplicationData.TYPE_LONG_TEXT)
-                        .setLongText(ComplicationText.plainText(text))
-                        .build()
-            }
-            else -> if (Log.isLoggable(TAG, Log.WARN)) {
-                Log.w(TAG, "Unexpected complication type $dataType")
-            }
-        }
-        return null
-    }
-
-
-    private fun getSiteId() :String {
-        try {
-            val defaultSiteId = this.applicationContext.getString(R.string.site_id)
-            val key = this.applicationContext.getString(R.string.watchface_prefs)
-            val prefs = this.applicationContext.getSharedPreferences(key, 0)
-            return prefs.getString(this.applicationContext.getString(R.string.prefs_site_id), defaultSiteId)
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception getting stuff")
-        }
-        return getString(R.string.site_id)
-    }
 
     private fun getTempString(temp: Float): String {
         return if (willDisplayFahrenheit()) {
@@ -169,10 +141,8 @@ class USGSStreamSummaryComplication : ComplicationProviderService() {
 
     private fun willDisplayFahrenheit() :Boolean {
         try {
-            val file = this.applicationContext.getString(R.string.watchface_prefs)
-            val prefs = this.applicationContext.getSharedPreferences(file, 0)
             val key = this.applicationContext.getString(R.string.fahrenheit_display_pref)
-            return prefs.getBoolean(key, false)
+            return defaultSharedPreferences.getBoolean(key, true)
         } catch (e: Exception) {
             Log.e(TAG, "Exception getting stuff")
         }

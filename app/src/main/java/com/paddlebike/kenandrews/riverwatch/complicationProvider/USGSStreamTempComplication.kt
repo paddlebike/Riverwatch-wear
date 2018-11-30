@@ -7,6 +7,7 @@ import android.support.wearable.complications.ComplicationProviderService
 import android.support.wearable.complications.ComplicationText
 import android.util.Log
 import com.paddlebike.kenandrews.riverwatch.*
+import org.jetbrains.anko.defaultSharedPreferences
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 
@@ -45,8 +46,9 @@ class USGSStreamTempComplication : ComplicationProviderService() {
         Log.d(TAG, "onComplicationUpdate() id: " + complicationId)
 
         val siteData = USGSSitePrefs(this.applicationContext)
-        var complicationData: ComplicationData?
-        val siteId = getSiteId()
+        val siteId = defaultSharedPreferences.getString(
+                this.applicationContext.getString(R.string.prefs_site_id),
+                this.applicationContext.getString(R.string.site_id))
         doAsync {
             try {
                 val site = USGSSite.fetch(siteId)
@@ -72,7 +74,7 @@ class USGSStreamTempComplication : ComplicationProviderService() {
      * Called when the complication has been deactivated.
      */
     override fun onComplicationDeactivated(complicationId: Int) {
-        Log.d(TAG, "onComplicationDeactivated(): " + complicationId)
+        Log.d(TAG, "onComplicationDeactivated(): $complicationId")
     }
 
 
@@ -114,7 +116,7 @@ class USGSStreamTempComplication : ComplicationProviderService() {
                     .setShortText(ComplicationText.plainText(String.format("%2.1f C", gaugeValue)))
                     .build()
             else -> if (Log.isLoggable(TAG, Log.WARN)) {
-                Log.w(TAG, "Unexpected complication type " + dataType)
+                Log.w(TAG, "Unexpected complication type $dataType")
             }
         }
         return null
@@ -150,24 +152,10 @@ class USGSStreamTempComplication : ComplicationProviderService() {
     }
 
 
-    private fun getSiteId() :String {
-        val defaultSiteId = this.applicationContext.getString(R.string.site_id)
-        try {
-            val key = this.applicationContext.getString(R.string.watchface_prefs)
-            val prefs = this.applicationContext.getSharedPreferences(key, 0)
-            return prefs.getString("saved_gauge_id", defaultSiteId)
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception getting stuff")
-        }
-        return defaultSiteId
-    }
-
     private fun willDisplayFahrenheit() :Boolean {
         try {
-            val file = this.applicationContext.getString(R.string.watchface_prefs)
-            val prefs = this.applicationContext.getSharedPreferences(file, 0)
             val key = this.applicationContext.getString(R.string.fahrenheit_display_pref)
-            return prefs.getBoolean(key, false)
+            return defaultSharedPreferences.getBoolean(key, true)
         } catch (e: Exception) {
             Log.e(TAG, "Exception getting stuff")
         }

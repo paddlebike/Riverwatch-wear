@@ -33,7 +33,7 @@ class ComplicationConfigActivity : Activity (){
         mAdapter = ComplicationConfigRecyclerViewAdapter(
                 applicationContext,
                 ComplicationConfigData.watchFaceServiceClass,
-                ComplicationConfigData.getDataToPopulateAdapter(this))
+                ComplicationConfigData.getDataToPopulateAdapter())
 
         // Aligns the first and last items on the list vertically centered on the screen.
         this.wearable_recycler_view.isEdgeItemsCenteringEnabled = true
@@ -58,7 +58,6 @@ class ComplicationConfigActivity : Activity (){
             // Updates preview with new complication information for selected complication id.
             // Note: complication id is saved and tracked in the adapter class.
             mAdapter.updateSelectedComplication(complicationProviderInfo)
-
         }
     }
 }

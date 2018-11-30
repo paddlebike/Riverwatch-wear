@@ -6,6 +6,7 @@ import android.support.wearable.complications.ComplicationProviderService
 import android.support.wearable.complications.ComplicationText
 import android.util.Log
 import com.paddlebike.kenandrews.riverwatch.*
+import org.jetbrains.anko.defaultSharedPreferences
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 
@@ -24,7 +25,7 @@ class USGSStreamFlowComplication : ComplicationProviderService() {
      */
     override fun onComplicationActivated(
             complicationId: Int, dataType: Int, complicationManager: ComplicationManager?) {
-        Log.d(TAG, "onComplicationActivated(): " + complicationId)
+        Log.d(TAG, "onComplicationActivated():  $complicationId")
 
     }
 
@@ -40,11 +41,13 @@ class USGSStreamFlowComplication : ComplicationProviderService() {
      */
     override fun onComplicationUpdate(
             complicationId: Int, dataType: Int, complicationManager: ComplicationManager) {
-        Log.d(TAG, "onComplicationUpdate() id: " + complicationId)
+        Log.d(TAG, "onComplicationUpdate() id: $complicationId")
 
         val siteData = USGSSitePrefs(this.applicationContext)
         var complicationData: ComplicationData?
-        val siteId = getSiteId()
+        val siteId = defaultSharedPreferences.getString(
+                this.applicationContext.getString(R.string.prefs_site_id),
+                this.applicationContext.getString(R.string.site_id))
         doAsync {
             try {
                 val site = USGSSite.fetch(siteId)
@@ -66,7 +69,7 @@ class USGSStreamFlowComplication : ComplicationProviderService() {
      * Called when the complication has been deactivated.
      */
     override fun onComplicationDeactivated(complicationId: Int) {
-        Log.d(TAG, "onComplicationDeactivated(): " + complicationId)
+        Log.d(TAG, "onComplicationDeactivated(): $complicationId")
     }
 
 
@@ -115,22 +118,10 @@ class USGSStreamFlowComplication : ComplicationProviderService() {
                         .build()
             }
             else -> if (Log.isLoggable(TAG, Log.WARN)) {
-                Log.w(TAG, "Unexpected complication type " + dataType)
+                Log.w(TAG, "Unexpected complication type $dataType")
             }
         }
         return null
     }
 
-
-    private fun getSiteId() :String {
-        try {
-            val defaultSiteId = this.applicationContext.getString(R.string.site_id)
-            val key = this.applicationContext.getString(R.string.watchface_prefs)
-            val prefs = this.applicationContext.getSharedPreferences(key, 0)
-            return prefs.getString(this.applicationContext.getString(R.string.prefs_site_id), defaultSiteId)
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception getting stuff")
-        }
-        return getString(R.string.site_id)
-    }
 }

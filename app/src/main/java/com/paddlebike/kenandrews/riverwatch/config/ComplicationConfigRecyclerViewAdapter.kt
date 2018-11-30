@@ -7,12 +7,9 @@ package com.paddlebike.kenandrews.riverwatch.config
 import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
-import android.content.SharedPreferences
 import android.graphics.drawable.Drawable
 import android.support.v7.widget.RecyclerView
-import android.support.wearable.complications.ComplicationHelperActivity
-import android.support.wearable.complications.ComplicationProviderInfo
-import android.support.wearable.complications.ProviderInfoRetriever
+import android.support.wearable.complications.*
 import android.support.wearable.complications.ProviderInfoRetriever.OnProviderInfoReceivedCallback
 import android.util.Log
 import android.view.KeyEvent
@@ -24,39 +21,21 @@ import android.view.inputmethod.EditorInfo
 import android.widget.*
 import com.paddlebike.kenandrews.riverwatch.R
 import com.paddlebike.kenandrews.riverwatch.RiverWatchFace
+import com.paddlebike.kenandrews.riverwatch.complicationProvider.USGSStreamFlowComplication
+import com.paddlebike.kenandrews.riverwatch.complicationProvider.USGSStreamLevelComplication
+import com.paddlebike.kenandrews.riverwatch.complicationProvider.USGSStreamSummaryComplication
+import com.paddlebike.kenandrews.riverwatch.complicationProvider.USGSStreamTempComplication
 import kotlinx.android.synthetic.main.config_list_gauge_id.view.*
 import kotlinx.android.synthetic.main.config_list_more_options_item.view.*
 import kotlinx.android.synthetic.main.config_list_preview_and_complications_item.view.*
+import org.jetbrains.anko.defaultSharedPreferences
 
 
 import java.util.ArrayList
 import java.util.concurrent.Executors
 
 /**
- * Displays different layouts for configuring watch face's complications and appearance settings
- * (highlight color [second arm], background color, unread notifications, etc.).
- *
- *
- * All appearance settings are saved via [SharedPreferences].
- *
- *
- * Layouts provided by this adapter are split into 5 main view types.
- *
- *
- * A watch face preview including complications. Allows user to tap on the complications to
- * change the complication data and see a live preview of the watch face.
- *
- *
- * Simple arrow to indicate there are more options below the fold.
- *
- *
- * Color configuration options for both highlight (seconds hand) and background color.
- *
- *
- * Toggle for unread notifications.
- *
- *
- * Background image complication configuration for changing background image of watch face.
+ * Displays different layouts for configuring watch face's complications
  */
 class ComplicationConfigRecyclerViewAdapter(
         private val mContext: Context,
@@ -69,8 +48,6 @@ class ComplicationConfigRecyclerViewAdapter(
     */
 
     private val mWatchFaceComponentName: ComponentName = ComponentName(mContext, watchFaceServiceClass)
-
-    internal var mSharedPref: SharedPreferences
 
     // Selected complication id by user.
     private var mSelectedComplicationId: Int = 0
@@ -86,6 +63,7 @@ class ComplicationConfigRecyclerViewAdapter(
     // Maintains reference view holder to dynamically update watch face preview. Used instead of
     // notifyItemChanged(int position) to avoid flicker and re-inflating the view.
     private var mPreviewAndComplicationsViewHolder: PreviewAndComplicationsViewHolder? = null
+
 
     /**
      * Used by associated watch face to let this
@@ -111,16 +89,12 @@ class ComplicationConfigRecyclerViewAdapter(
         mRightComplicationId = RiverWatchFace.getComplicationId(ComplicationLocation.RIGHT)
         mBottomComplicationId = RiverWatchFace.getComplicationId(ComplicationLocation.BOTTOM)
 
-        mSharedPref = mContext.getSharedPreferences(mContext.getString(R.string.watchface_prefs), 0)
-
         // Initialization of code to retrieve active complication data for the watch face.
         mProviderInfoRetriever = ProviderInfoRetriever(mContext, Executors.newCachedThreadPool())
         mProviderInfoRetriever.init()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        Log.d(TAG, "onCreateViewHolder(): viewType: $viewType")
-
 
         return when (viewType) {
             TYPE_PREVIEW_AND_COMPLICATIONS_CONFIG -> {
@@ -134,13 +108,6 @@ class ComplicationConfigRecyclerViewAdapter(
                                         false))
             }
 
-            TYPE_MORE_OPTIONS -> MoreOptionsViewHolder(
-                    LayoutInflater.from(parent.context)
-                            .inflate(
-                                    R.layout.config_list_more_options_item,
-                                    parent,
-                                    false))
-
             TYPE_GAUGE_ID_CONFIG ->  GaugeIdViewHolder(
                     LayoutInflater.from(parent.context)
                             .inflate(
@@ -148,12 +115,6 @@ class ComplicationConfigRecyclerViewAdapter(
                                     parent,
                                     false))
 
-            TYPE_FAHRENHEIT_CONFIG ->  FahrenheitDisplayViewHolder(
-                    LayoutInflater.from(parent.context)
-                            .inflate(
-                                    R.layout.config_list_fahrenheit,
-                                    parent,
-                                    false))
             else -> MoreOptionsViewHolder(
                     LayoutInflater.from(parent.context)
                             .inflate(
@@ -167,55 +128,18 @@ class ComplicationConfigRecyclerViewAdapter(
     override fun onBindViewHolder(viewHolder: RecyclerView.ViewHolder, position: Int) {
         Log.d(TAG, "Element $position set.")
 
-        // Pulls all data required for creating the UX for the specific setting option.
-        val configItemType = mSettingsDataSet[position]
-
         when (viewHolder.itemViewType) {
             TYPE_PREVIEW_AND_COMPLICATIONS_CONFIG -> {
                 val previewAndComplicationsViewHolder = viewHolder as PreviewAndComplicationsViewHolder
 
-                //val previewAndComplicationsConfigItem = configItemType as ComplicationConfigData.PreviewAndComplicationsConfigItem
-
-                //val defaultComplicationResourceId = previewAndComplicationsConfigItem.defaultComplicationResourceId
                 previewAndComplicationsViewHolder.setDefaultComplicationDrawable()
-
                 previewAndComplicationsViewHolder.initializeComplications()
             }
 
-            TYPE_MORE_OPTIONS -> {
-                val moreOptionsViewHolder = viewHolder as MoreOptionsViewHolder
-                val moreOptionsConfigItem = configItemType as ComplicationConfigData.MoreOptionsConfigItem
-
-                moreOptionsViewHolder.setIcon(moreOptionsConfigItem.iconResourceId)
-            }
-
-
             TYPE_GAUGE_ID_CONFIG -> {
                 val gaugeIdViewHolder = viewHolder as GaugeIdViewHolder
-                val gaugeIdConfigItem = configItemType as ComplicationConfigData.GaugeIdConfigItem
-
-                gaugeIdViewHolder.setDefault(gaugeIdConfigItem.defaultGaugeId)
+                gaugeIdViewHolder.bind()
             }
-
-
-            TYPE_FAHRENHEIT_CONFIG -> {
-                val fahrenheitViewHolder = viewHolder as FahrenheitDisplayViewHolder
-
-                val fahrenheitConfigItem = configItemType as ComplicationConfigData.FahrenheitDisplayConfigItem
-
-                val fahrenheitEnabledIconResourceId = fahrenheitConfigItem.iconEnabledResourceId
-                val fahrenheitDisabledIconResourceId = fahrenheitConfigItem.iconDisabledResourceId
-
-                val unreadName = fahrenheitConfigItem.name
-                val unreadSharedPrefId = fahrenheitConfigItem.sharedPrefId
-
-                fahrenheitViewHolder.setIcons(
-                        fahrenheitDisabledIconResourceId, fahrenheitEnabledIconResourceId)
-                fahrenheitViewHolder.setName(unreadName)
-                fahrenheitViewHolder.setSharedPrefId(unreadSharedPrefId)
-            }
-
-
         }
     }
 
@@ -227,6 +151,21 @@ class ComplicationConfigRecyclerViewAdapter(
     override fun getItemCount(): Int {
         return mSettingsDataSet.size
     }
+
+    private fun updateRequest(complication: Class<out ComplicationProviderService>) {
+        ProviderUpdateRequester(mContext, ComponentName(mContext, complication)).requestUpdateAll()
+    }
+
+    fun updateComplications() {
+        arrayOf(
+                USGSStreamSummaryComplication::class.java,
+                USGSStreamLevelComplication::class.java,
+                USGSStreamFlowComplication::class.java,
+                USGSStreamTempComplication::class.java)
+                .forEach { c -> updateRequest(c) }
+
+    }
+
 
     /** Updates the selected complication id saved earlier with the new information.  */
     fun updateSelectedComplication(complicationProviderInfo: ComplicationProviderInfo) {
@@ -254,24 +193,16 @@ class ComplicationConfigRecyclerViewAdapter(
     inner class PreviewAndComplicationsViewHolder(view: View) : RecyclerView.ViewHolder(view), OnClickListener {
 
         private val mLeftComplicationBackground = view.left_complication_background
-
         private val mCenterComplicationBackground = view.center_complication_background
-
         private val mRightComplicationBackground: ImageView = view.right_complication_background
-
         private val mBottomComplicationBackground = view.bottom_complication_background
 
         private val mLeftComplication = view.left_complication
-
         private val mCenterComplication = view.center_complication
-
         private val mRightComplication = view.right_complication
-
         private val mBottomComplication = view.bottom_complication
 
-
         private var mDefaultComplicationDrawable: Drawable? = null
-
         private var mBackgroundComplicationEnabled: Boolean = false
 
         init {
@@ -309,7 +240,6 @@ class ComplicationConfigRecyclerViewAdapter(
                 }
             }
         }
-
 
 
         // Verifies the watch face supports the complication location, then launches the helper
@@ -417,124 +347,82 @@ class ComplicationConfigRecyclerViewAdapter(
     inner class MoreOptionsViewHolder(view: View) : RecyclerView.ViewHolder(view) {
 
         private val mMoreOptionsImageView = view.more_options_image_view
-
-        fun setIcon(resourceId: Int) {
+        fun bind() {
             val context = mMoreOptionsImageView.context
-            mMoreOptionsImageView.setImageDrawable(context.getDrawable(resourceId))
+            mMoreOptionsImageView.setImageDrawable(context.getDrawable(R.drawable.ic_expand_more_white_18dp))
         }
     }
 
 
     /** Numeric text box for entering the gauge ID.  */
-    inner class GaugeIdViewHolder(view: View) : RecyclerView.ViewHolder(view), TextView.OnEditorActionListener  {
+    inner class GaugeIdViewHolder(view: View) : RecyclerView.ViewHolder(view),
+            TextView.OnEditorActionListener , OnClickListener {
 
         private var mGaugeIdTextView = view.stationIdEditBox
+        private val sitePref = mGaugeIdTextView.context.getString(R.string.prefs_site_id)
+        private val tempPrefId = mGaugeIdTextView.context.getString(R.string.fahrenheit_display_pref)
+        private val defaultSite = mGaugeIdTextView.context.getString(R.string.site_id)
+
+        private val mTempSwitch = view.tempDisplaySwitch
+        private val prefs = view.context.defaultSharedPreferences
 
         init {
             mGaugeIdTextView.setOnEditorActionListener(this)
+            mTempSwitch.setOnClickListener(this)
         }
 
-        fun setDefault(resourceId: Int) {
+        fun bind() {
             Log.d(TAG, "Setting the default gauge ID")
             val context = mGaugeIdTextView.context
-            val defaultSite = context.getString(resourceId)
-            val editable = mSharedPref.getString("saved_gauge_id", defaultSite)
-            mGaugeIdTextView.setText(editable)
+            val siteId = context.defaultSharedPreferences.getString(sitePref, defaultSite)
+            mGaugeIdTextView.setText(siteId)
 
+            mTempSwitch.setText(R.string.config_display_fahrenheit_label)
+
+            val currentState = prefs.getBoolean(tempPrefId, true)
+            updateIcon(currentState)
         }
+
 
         override fun onEditorAction(textView: TextView?, actionId: Int, p2: KeyEvent?): Boolean {
             if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                val newSite = mGaugeIdTextView.text.toString()
-                Log.v("New site ID", newSite)
-
-                val editor = mSharedPref.edit()
-                editor.putString("saved_gauge_id", newSite)
-                editor.apply()
+                updateSiteIdPreference()
+                updateComplications()
             }
-            return true
+            return false
         }
 
-    }
-
-
-    /**
-     * Displays switch to indicate whether or not icon appears for unread notifications. User can
-     * toggle on/off.
-     */
-    inner class FahrenheitDisplayViewHolder(view: View) : RecyclerView.ViewHolder(view), OnClickListener {
-
-        private val mFahrenheitSwitch: Switch?
-
-        private var mEnabledIconResourceId: Int = 0
-        private var mDisabledIconResourceId: Int = 0
-
-        private var mSharedPrefResourceId: Int = 0
-
-        init {
-
-            mFahrenheitSwitch = view.findViewById(R.id.fahrenheit_display_switch) as Switch
-            view.setOnClickListener(this)
+        private fun updateSiteIdPreference() {
+            val newSite = mGaugeIdTextView.text.toString()
+            Log.v("New site ID", newSite)
+            mGaugeIdTextView.context.defaultSharedPreferences.edit().putString(sitePref, newSite).apply()
         }
 
-        fun setName(name: String) {
-            mFahrenheitSwitch!!.text = name
-        }
 
-        fun setIcons(enabledIconResourceId: Int, disabledIconResourceId: Int) {
-
-            mEnabledIconResourceId = enabledIconResourceId
-            mDisabledIconResourceId = disabledIconResourceId
-
-            val context = mFahrenheitSwitch!!.context
-
-            // Set default to enabled.
-            mFahrenheitSwitch.setCompoundDrawablesWithIntrinsicBounds(
-                    context.getDrawable(mEnabledIconResourceId), null, null, null)
-        }
-
-        fun setSharedPrefId(sharedPrefId: Int) {
-            mSharedPrefResourceId = sharedPrefId
-
-            if (mFahrenheitSwitch != null) {
-
-                val context = mFahrenheitSwitch.context
-                val sharedPreferenceString = context.getString(mSharedPrefResourceId)
-                val currentState = mSharedPref.getBoolean(sharedPreferenceString, true)
-
-                updateIcon(context, currentState)
-            }
-        }
-
-        private fun updateIcon(context: Context, currentState: Boolean?) {
-            val currentIconResourceId: Int
-
-            if (currentState!!) {
-                currentIconResourceId = mEnabledIconResourceId
+        private fun updateIcon(currentState: Boolean?) {
+            val currentIconResourceId: Int = if (currentState!!) {
+                R.drawable.fahrenheit_icon
             } else {
-                currentIconResourceId = mDisabledIconResourceId
+                R.drawable.celsius_icon
             }
 
-            this.mFahrenheitSwitch!!.isChecked = currentState
-            this.mFahrenheitSwitch.setCompoundDrawablesWithIntrinsicBounds(
-                    context.getDrawable(currentIconResourceId), null, null, null)
+            mTempSwitch.isChecked = currentState
+            mTempSwitch.setCompoundDrawablesWithIntrinsicBounds(
+                    mTempSwitch.context.getDrawable(currentIconResourceId), null, null, null)
         }
+
 
         override fun onClick(view: View) {
             val position = adapterPosition
             Log.d(TAG, "Complication onClick() position: $position")
 
-            val context = view.context
-            val sharedPreferenceString = context.getString(mSharedPrefResourceId)
-
             // Since user clicked on a switch, new state should be opposite of current state.
-            val newState = !mSharedPref.getBoolean(sharedPreferenceString, true)
+            val newState = !prefs.getBoolean(tempPrefId, true)
 
-            val editor = mSharedPref.edit()
-            editor.putBoolean(sharedPreferenceString, newState)
-            editor.apply()
+            prefs.edit().putBoolean(tempPrefId, newState).apply()
 
-            updateIcon(context, newState)
+            updateIcon(newState)
+            updateComplications()
         }
     }
 
@@ -546,6 +434,5 @@ class ComplicationConfigRecyclerViewAdapter(
         const val TYPE_PREVIEW_AND_COMPLICATIONS_CONFIG = 0
         const val TYPE_MORE_OPTIONS = 1
         const val TYPE_GAUGE_ID_CONFIG = 2
-        const val TYPE_FAHRENHEIT_CONFIG = 3
     }
 }

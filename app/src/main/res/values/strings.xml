@@ -14,6 +14,7 @@
     <string name="prefs_site_id">site_id</string>
     <string name="fahrenheit_display_pref">fahrenheit_display</string>
     <string name="config_display_fahrenheit_label">Fahrenheit\nDisplay</string>
+    <string name="config_fahrenheit">Show Temp in Fahrenheit</string>
 
     <string name="complication_config">Configure Watchface Complications</string>
     <string name="add_complication">Add Complication</string>

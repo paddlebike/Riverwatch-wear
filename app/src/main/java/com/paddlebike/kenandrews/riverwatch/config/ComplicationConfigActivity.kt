@@ -3,10 +3,10 @@ package com.paddlebike.kenandrews.riverwatch.config
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.support.v7.widget.LinearLayoutManager
 import android.support.wearable.complications.ComplicationProviderInfo
 import android.support.wearable.complications.ProviderChooserIntent
 import android.util.Log
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.paddlebike.kenandrews.riverwatch.R
 import kotlinx.android.synthetic.main.activity_complication_config.*
 
@@ -43,13 +43,12 @@ class ComplicationConfigActivity : Activity (){
         // Improves performance because we know changes in content do not change the layout size of
         // the RecyclerView.
         this.wearable_recycler_view.setHasFixedSize(true)
-
         this.wearable_recycler_view.adapter = mAdapter
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
 
-        if (requestCode == COMPLICATION_CONFIG_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+        if (requestCode == COMPLICATION_CONFIG_REQUEST_CODE && resultCode == RESULT_OK) {
 
             // Retrieves information for selected Complication provider.
             val complicationProviderInfo = data!!.getParcelableExtra<ComplicationProviderInfo>(ProviderChooserIntent.EXTRA_PROVIDER_INFO)

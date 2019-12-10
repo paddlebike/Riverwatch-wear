@@ -5,7 +5,6 @@ import android.graphics.*
 import android.os.Bundle
 import android.os.Handler
 import android.os.Message
-import android.support.v4.content.ContextCompat
 import android.support.wearable.complications.ComplicationData
 import android.support.wearable.complications.ComplicationData.TYPE_SHORT_TEXT
 import android.support.wearable.complications.SystemProviders.DATE
@@ -30,6 +29,7 @@ import android.content.Intent
 import android.content.ComponentName
 import android.app.PendingIntent
 import android.support.wearable.complications.ComplicationData.TYPE_LONG_TEXT
+import androidx.core.content.ContextCompat
 import com.paddlebike.kenandrews.riverwatch.complicationProvider.ComplicationSiteModel
 import com.paddlebike.kenandrews.riverwatch.complicationProvider.USGSStreamLevelComplication
 import com.paddlebike.kenandrews.riverwatch.complicationProvider.USGSStreamSummaryComplication

@@ -44,7 +44,6 @@ class USGSStreamFlowComplication : ComplicationProviderService() {
         Log.d(TAG, "onComplicationUpdate() id: $complicationId")
 
         val siteData = USGSSitePrefs(this.applicationContext)
-        var complicationData: ComplicationData?
         val siteId = defaultSharedPreferences.getString(
                 this.applicationContext.getString(R.string.prefs_site_id),
                 this.applicationContext.getString(R.string.site_id))

@@ -1,7 +1,6 @@
 package com.paddlebike.kenandrews.riverwatch.config
 
-import android.support.v7.widget.RecyclerView
-import android.support.v7.widget.RecyclerView.ViewHolder
+
 import com.paddlebike.kenandrews.riverwatch.RiverWatchFace
 import java.util.ArrayList
 

@@ -8,7 +8,6 @@ import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.graphics.drawable.Drawable
-import android.support.v7.widget.RecyclerView
 import android.support.wearable.complications.*
 import android.support.wearable.complications.ProviderInfoRetriever.OnProviderInfoReceivedCallback
 import android.util.Log
@@ -19,6 +18,7 @@ import android.view.View.OnClickListener
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.*
+import androidx.recyclerview.widget.RecyclerView
 import com.paddlebike.kenandrews.riverwatch.R
 import com.paddlebike.kenandrews.riverwatch.RiverWatchFace
 import com.paddlebike.kenandrews.riverwatch.complicationProvider.USGSStreamFlowComplication

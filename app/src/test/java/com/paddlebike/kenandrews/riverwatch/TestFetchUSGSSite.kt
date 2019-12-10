@@ -1,11 +1,10 @@
 package com.paddlebike.kenandrews.riverwatch
 
-
-
+import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.GAUGE_LEVEL
+import com.paddlebike.kenandrews.riverwatch.data.USGSTimeSeries
+import com.paddlebike.kenandrews.riverwatch.database.USGSGauge
 import org.joda.time.format.DateTimeFormat
 import org.junit.Test
-
-
 
 
 /**
@@ -61,4 +60,39 @@ class TestFetchUSGSSite {
     }
 
 
+    @Test
+    fun kotlinxParser() {
+        val jsonString = USGSSite.fetchToString("01646500")
+        println(jsonString)
+        val ts = USGSSite.kotlinxParse(jsonString)
+        assert(ts is USGSTimeSeries)
+        println(ts)
+
+        for (gauge in ts?.value!!.timeSeries) {
+            val siteName = gauge.sourceInfo.siteName
+            val siteID = gauge.name
+
+            for (item in gauge.values) {
+                if (item.value.isNotEmpty()) {
+                    val readingTime = item.value.last().dateTime
+                    val readingValue = item.value.last().value
+                    val usgsGauge = USGSGauge(siteName, siteID, readingTime, readingValue)
+                    println("Gauge $usgsGauge")
+                    break
+                }
+            }
+        }
+        println("Done!!")
+    }
+
+    @Test
+    fun newFetchAndParse() {
+        val site = USGSSite.fetchSite("01646500")
+
+        val level = site["USGS:01646500:$GAUGE_LEVEL:00000"]
+
+        assert(level != null)
+        println("${level!!.gaugeId} level was ${level.reading} at ${level.date}")
+        println("Done!!")
+    }
 }

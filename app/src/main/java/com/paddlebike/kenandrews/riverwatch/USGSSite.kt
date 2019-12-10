@@ -1,19 +1,22 @@
 package com.paddlebike.kenandrews.riverwatch
 
-import android.content.Context
-import android.content.SharedPreferences
 import android.util.Log
+import com.beust.klaxon.Json
 import com.beust.klaxon.JsonArray
 import com.beust.klaxon.JsonObject
 import com.beust.klaxon.Parser
 import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.GAUGE_FLOW
 import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.GAUGE_LEVEL
 import com.paddlebike.kenandrews.riverwatch.GaugeConstants.Companion.GAUGE_TEMP
+import com.paddlebike.kenandrews.riverwatch.data.USGSTimeSeries
+import com.paddlebike.kenandrews.riverwatch.data.parseUSGSTimeSeries
+import com.paddlebike.kenandrews.riverwatch.database.USGSGauge
 import org.joda.time.DateTime
 import org.joda.time.DateTimeZone
 
 import java.net.URL
 import java.util.*
+import kotlin.collections.HashMap
 
 class GaugeConstants {
     companion object {
@@ -72,26 +75,29 @@ class USGSSite {
                 val valuesArray = item.getValue("values") as? JsonArray<*> ?:
                 throw ExceptionInInitializerError("No values in response data")
 
-                val firstValue = valuesArray[0] as JsonObject
+                for (v in valuesArray) {
+                    val firstValue = v as JsonObject
+                    val myValue = firstValue.getValue("value") as JsonArray<*>
+                    if (myValue.isNotEmpty()) {
+                        val last = myValue.last() as JsonObject
+                        val reading = last.getValue("value") as String
+                        val time = last.getValue("dateTime") as String
 
-                val myValue = firstValue.getValue("value") as JsonArray<*>
-                val last = myValue.last() as JsonObject
-                val reading = last.getValue("value") as String
-                val time = last.getValue("dateTime") as String
+                        val param = GaugeParameter(reading.toFloat(), time)
 
-                val param = GaugeParameter(reading.toFloat(), time)
-
-                parameters[variableCode] = param
-
+                        parameters[variableCode] = param
+                    }
+                }
             }
 
             return Site(site, siteName, parameters)
         }
 
+
         fun fetch(siteId: String): Site {
             Log.d(TAG, "Fetching the gauge data for: $siteId")
             val response = URL("https://waterservices.usgs.gov/nwis/iv/?&period=P1D&format=json&parameterCd=00065,00060,00010&sites=$siteId").openStream()
-            Log.d(TAG, "Got response: " + response.toString())
+            Log.d(TAG, "Got response: $response" )
 
             val klx = Parser().parse(response) as? JsonObject ?:
                     throw ExceptionInInitializerError("No response data")
@@ -124,19 +130,42 @@ class USGSSite {
 
                 val myValue = firstValue.getValue("value") as JsonArray<*>
 
-                val last = myValue.last() as JsonObject
-                val reading = last.getValue("value") as String
-                val time = last.getValue("dateTime") as String
-                val param = GaugeParameter(reading.toFloat(), time)
-                parameters[variableCode] = param
-
-
+                if (myValue.isNotEmpty()) {
+                    val last = myValue.last() as JsonObject
+                    val reading = last.getValue("value") as String
+                    val time = last.getValue("dateTime") as String
+                    val param = GaugeParameter(reading.toFloat(), time)
+                    parameters[variableCode] = param
+                }
             }
 
             return Site(site, siteName, parameters)
         }
-    }
 
+        fun kotlinxParse(jsonString: String): USGSTimeSeries? = parseUSGSTimeSeries(jsonString)
+
+        fun fetchSite(siteId: String): HashMap<String,USGSGauge> {
+            val jsonString = fetchToString(siteId)
+            val ts = parseUSGSTimeSeries(jsonString)
+
+            val  site: HashMap<String,USGSGauge> = hashMapOf()
+
+            for (gauge in ts?.value!!.timeSeries) {
+                val siteName = gauge.sourceInfo.siteName
+                val siteID = gauge.name
+
+                for (item in gauge.values) {
+                    if (item.value.isNotEmpty()) {
+                        val readingTime = item.value.last().dateTime
+                        val readingValue = item.value.last().value
+                        site[siteID] =  USGSGauge(siteName, siteID, readingTime, readingValue)
+                        break
+                    }
+                }
+            }
+            return site
+        }
+    }
 
 
     data class Site(val siteId: String, val name: String,val parameters: HashMap<String,GaugeParameter>) {
@@ -183,4 +212,7 @@ class USGSSite {
             return DateTime(date).withZone(tz)
         }
     }
+
+
+
 }

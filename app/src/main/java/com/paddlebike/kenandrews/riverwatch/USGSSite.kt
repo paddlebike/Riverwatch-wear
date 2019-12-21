@@ -94,7 +94,7 @@ class USGSSite {
         }
 
 
-        fun fetch(siteId: String): Site {
+        fun oldFetch(siteId: String): Site {
             Log.d(TAG, "Fetching the gauge data for: $siteId")
             val response = URL("https://waterservices.usgs.gov/nwis/iv/?&period=P1D&format=json&parameterCd=00065,00060,00010&sites=$siteId").openStream()
             Log.d(TAG, "Got response: $response" )
@@ -150,7 +150,7 @@ class USGSSite {
 
             val  site: HashMap<String,USGSGauge> = hashMapOf()
 
-            for (gauge in ts?.value!!.timeSeries) {
+            for (gauge in ts.value.timeSeries) {
                 val siteName = gauge.sourceInfo.siteName
                 val siteID = gauge.name
 
@@ -164,6 +164,31 @@ class USGSSite {
                 }
             }
             return site
+        }
+
+        fun fetch(siteId: String): Site {
+            val jsonString = fetchToString(siteId)
+            val ts = parseUSGSTimeSeries(jsonString)
+
+
+            val parameters: HashMap<String, GaugeParameter> = hashMapOf()
+            var gaugeName: String? = null
+
+            for (gauge in ts.value.timeSeries) {
+                if (gaugeName == null) gaugeName = gauge.sourceInfo.siteName
+
+
+                for (item in gauge.values) {
+                    if (item.value.isNotEmpty()) {
+                        val readingTime = item.value.last().dateTime
+                        val readingValue = item.value.last().value.toFloat()
+                        val variableCode = gauge.name.split(":")[2]
+                        val param = GaugeParameter(readingValue, readingTime)
+                        parameters[variableCode] = param
+                    }
+                }
+            }
+            return Site(siteId, gaugeName!!, parameters)
         }
     }
 

@@ -49,22 +49,13 @@ class TestFetchUSGSSite {
         println(response)
     }
 
-    @Test
-    fun parseReturnsAGauge() {
-        val jsonString = USGSSite.fetchToString("01646500")
-        println(jsonString)
-        val site = USGSSite.parseJson(jsonString)
-        //println(site.getTimeStamp().toLocalTime().toString())
-        val formatter = DateTimeFormat.forPattern("HH:mm")
-        println(site.getTimeStamp().toString(formatter))
-    }
 
 
     @Test
     fun kotlinxParser() {
         val jsonString = USGSSite.fetchToString("01646500")
         println(jsonString)
-        val ts = USGSSite.kotlinxParse(jsonString)
+        val ts = USGSSite.parseJSONtoUSGSTimeSeries(jsonString)
         assert(ts is USGSTimeSeries)
         println(ts)
 
